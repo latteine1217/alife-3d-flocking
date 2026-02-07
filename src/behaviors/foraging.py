@@ -336,7 +336,7 @@ class ForagingBehaviorMixin:
     @ti.kernel
     def _check_energy_death(self):
         """
-        檢查能量耗盡導致的死亡
+        檢查能量耗盡導致的死亡（只檢查前 N 個活躍 agents）
 
         邏輯：
             • 能量 <= 0 → 標記為死亡 (agent_alive = 0)
@@ -345,7 +345,8 @@ class ForagingBehaviorMixin:
         """
         dead_zone = 1e6  # 遠離模擬區域的位置
 
-        for i in self.agent_energy:
+        # 只檢查前 N 個 agents（實際活躍的）
+        for i in range(self.N):
             if self.agent_energy[i] <= 0.0:
                 # 標記為死亡
                 self.agent_alive[i] = 0
@@ -370,9 +371,10 @@ class ForagingBehaviorMixin:
         """
         self._check_energy_death()
 
-        # 統計死亡數
-        alive_count = int(self.agent_alive.to_numpy().sum())
-        dead_count = len(self.agent_alive.to_numpy()) - alive_count
+        # 統計死亡數（只統計前 N 個 agents）
+        alive_arr = self.agent_alive.to_numpy()[: self.N]
+        alive_count = int(alive_arr.sum())
+        dead_count = self.N - alive_count
 
         if dead_count > 0:
             print(

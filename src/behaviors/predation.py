@@ -272,8 +272,8 @@ class PredationBehaviorMixin:
     # Query API
     # ========================================================================
     def get_alive_count(self) -> int:
-        """獲取存活 agent 數量"""
-        return int(self.agent_alive.to_numpy().sum())
+        """獲取存活 agent 數量（只統計前 N 個活躍 agents）"""
+        return int(self.agent_alive.to_numpy()[: self.N].sum())
 
     def get_predator_count(self) -> int:
         """獲取掠食者數量"""
