@@ -109,6 +109,7 @@ print(f"理論可滿足：10.0 / 3.0 = 3.33 個 agents")
 print("\n--- 測試 FIFO 模式 ---")
 system.agent_energy.from_numpy(energy_before)  # 重置能量
 system.resources.resource_amount[0] = 10.0  # 重置資源
+system.resources.resource_active[0] = 1  # 確保資源啟用
 
 system.consume_resources_step(
     consumption_rate=3.0, velocity_factor=0.0, competition_mode="fifo"
@@ -125,6 +126,8 @@ print(f"資源剩餘：{system.resources.resource_amount[0]:.2f}")
 print("\n--- 測試 Equal 模式 ---")
 system.agent_energy.from_numpy(energy_before)  # 重置能量
 system.resources.resource_amount[0] = 10.0  # 重置資源
+system.resources.resource_active[0] = 1  # 重新啟用資源（重要！）
+system.agent_target_resource.fill(0)  # 重新設定目標（重要！）
 
 system.consume_resources_step(
     consumption_rate=3.0, velocity_factor=0.0, competition_mode="equal"
