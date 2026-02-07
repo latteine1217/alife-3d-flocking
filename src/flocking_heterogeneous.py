@@ -222,16 +222,17 @@ class HeterogeneousFlocking3D(
         """初始化 agent 類型與個體參數"""
         assert len(agent_types) == self.N, "agent_types 長度必須等於 N"
 
-        # 轉換為 numpy arrays
-        beta_arr = np.zeros(self.N, dtype=np.float32)
-        eta_arr = np.zeros(self.N, dtype=np.float32)
-        v0_arr = np.zeros(self.N, dtype=np.float32)
-        mass_arr = np.zeros(self.N, dtype=np.float32)
-        goal_strength_arr = np.zeros(self.N, dtype=np.float32)
-        hunt_range_arr = np.zeros(self.N, dtype=np.float32)
-        attack_range_arr = np.zeros(self.N, dtype=np.float32)
-        type_arr = np.array(agent_types, dtype=np.int32)
+        # 轉換為 numpy arrays（大小 = max_agents，支援 pre-allocated pool）
+        beta_arr = np.zeros(self.max_agents, dtype=np.float32)
+        eta_arr = np.zeros(self.max_agents, dtype=np.float32)
+        v0_arr = np.zeros(self.max_agents, dtype=np.float32)
+        mass_arr = np.ones(self.max_agents, dtype=np.float32)  # 預設質量 = 1.0
+        goal_strength_arr = np.zeros(self.max_agents, dtype=np.float32)
+        hunt_range_arr = np.zeros(self.max_agents, dtype=np.float32)
+        attack_range_arr = np.zeros(self.max_agents, dtype=np.float32)
+        type_arr = np.zeros(self.max_agents, dtype=np.int32)  # 預設 type = 0 (FOLLOWER)
 
+        # 只填充前 N 個 agents 的數據
         for i, atype in enumerate(agent_types):
             profile = self.type_profiles[atype]
             beta_arr[i] = profile.beta
@@ -241,6 +242,7 @@ class HeterogeneousFlocking3D(
             goal_strength_arr[i] = profile.goal_strength
             hunt_range_arr[i] = profile.hunt_range
             attack_range_arr[i] = profile.attack_range
+            type_arr[i] = atype
 
         # 上傳到 GPU
         self.beta_individual.from_numpy(beta_arr)
@@ -251,7 +253,7 @@ class HeterogeneousFlocking3D(
         self.goal_strength.from_numpy(goal_strength_arr)
         self.predator_hunt_range.from_numpy(hunt_range_arr)
         self.predator_attack_range.from_numpy(attack_range_arr)
-        self.agent_type.from_numpy(type_arr)
+        self.agent_type_field.from_numpy(type_arr)  # 使用 agent_type_field
 
         # 保留 NumPy 陣列供序列化器使用
         self.agent_types_np = type_arr
@@ -259,9 +261,44 @@ class HeterogeneousFlocking3D(
         # 預設無目標
         self.has_goal.fill(0)
 
+    def initialize(self, box_size: float = None, v_scale: float = 0.1, seed: int = 0):
+        """
+        初始化粒子位置與速度（覆寫父類別以支援 pre-allocated pool）
+
+        Args:
+            box_size: 初始分布範圍 (預設為 box_size * 0.3)
+            v_scale: 初始速度尺度
+            seed: 隨機種子
+
+        Note:
+            只初始化前 N 個 agents（活躍的），剩餘 (max_agents - N) 個保持未初始化狀態
+        """
+        if box_size is None:
+            box_size = self.params.box_size * 0.3
+
+        rng = np.random.default_rng(seed)
+
+        # 創建大小為 max_agents 的陣列，只填充前 N 個
+        x_init = np.zeros((self.max_agents, 3), dtype=np.float32)
+        v_init = np.zeros((self.max_agents, 3), dtype=np.float32)
+        rng_states = np.zeros(self.max_agents, dtype=np.uint32)
+
+        # 只初始化前 N 個 agents
+        x_init[: self.N] = rng.uniform(-box_size, box_size, (self.N, 3)).astype(
+            np.float32
+        )
+        v_init[: self.N] = rng.uniform(-v_scale, v_scale, (self.N, 3)).astype(
+            np.float32
+        )
+        rng_states[: self.N] = rng.integers(0, 2**32, size=self.N, dtype=np.uint32)
+
+        self.x.from_numpy(x_init)
+        self.v.from_numpy(v_init)
+        self.rng_state.from_numpy(rng_states)
+
     def _count_types(self) -> Dict[int, int]:
-        """統計各類型數量"""
-        type_arr = self.agent_type.to_numpy()
+        """統計各類型數量（只統計前 N 個活躍 agents）"""
+        type_arr = self.agent_type_field.to_numpy()[: self.N]  # 只取前 N 個
         unique, counts = np.unique(type_arr, return_counts=True)
         return dict(zip(unique, counts))
 
@@ -357,7 +394,7 @@ class HeterogeneousFlocking3D(
                         self.f[i] += foraging_strength * (direction / dist)
 
             # Predator hunting force (掠食者追捕)
-            if self.agent_type[i] == 3 and self.agent_alive[i] == 1:  # PREDATOR
+            if self.agent_type_field[i] == 3 and self.agent_alive[i] == 1:  # PREDATOR
                 target_prey = self.agent_target_prey[i]
                 if target_prey >= 0 and self.agent_alive[target_prey] == 1:
                     # 計算方向（考慮 PBC）
@@ -375,13 +412,15 @@ class HeterogeneousFlocking3D(
                         self.f[i] += hunt_strength * (direction / dist)
 
             # Prey escape force (獵物逃跑)
-            if self.agent_type[i] != 3 and self.agent_alive[i] == 1:  # 非掠食者
+            if self.agent_type_field[i] != 3 and self.agent_alive[i] == 1:  # 非掠食者
                 # 檢查附近是否有掠食者
                 escape_force = ti.Vector([0.0, 0.0, 0.0])
                 escape_range = 15.0  # 逃跑感知範圍
 
                 for j in range(self.N):
-                    if self.agent_type[j] == 3 and self.agent_alive[j] == 1:  # 是掠食者
+                    if (
+                        self.agent_type_field[j] == 3 and self.agent_alive[j] == 1
+                    ):  # 是掠食者
                         # 計算距離
                         dx = ti.Vector([0.0, 0.0, 0.0])
                         if self.params.boundary_mode == 0:  # PBC
@@ -556,7 +595,7 @@ class HeterogeneousFlocking3D(
         # 分配 agents 到 Grid（排除掠食者）
         for i in self.x:
             # 排除掠食者
-            if self.agent_type[i] == 3:
+            if self.agent_type_field[i] == 3:
                 self.agent_cell_id[i] = -1
                 continue
 
@@ -583,7 +622,7 @@ class HeterogeneousFlocking3D(
         """
         for i in self.x:
             # 排除掠食者（type=3）不參與群組檢測
-            if self.agent_type[i] == 3:
+            if self.agent_type_field[i] == 3:
                 self.group_id[i] = -1
                 continue
 
@@ -637,7 +676,7 @@ class HeterogeneousFlocking3D(
                                     continue
 
                                 # 排除掠食者
-                                if self.agent_type[j] == 3:
+                                if self.agent_type_field[j] == 3:
                                     continue
 
                                 xj = self.x[j]
@@ -686,7 +725,7 @@ class HeterogeneousFlocking3D(
 
         # 計算群組總和（排除掠食者）
         for i in self.x:
-            if self.agent_type[i] == 3:
+            if self.agent_type_field[i] == 3:
                 continue
 
             gid = self.group_id[i]

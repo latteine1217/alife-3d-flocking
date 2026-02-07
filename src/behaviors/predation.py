@@ -62,7 +62,7 @@ class PredationBehaviorMixin:
         """
         for i in self.x:
             # 只有存活的掠食者才追捕
-            if self.agent_type[i] == 3 and self.agent_alive[i] == 1:  # PREDATOR
+            if self.agent_type_field[i] == 3 and self.agent_alive[i] == 1:  # PREDATOR
                 hunt_range = self.predator_hunt_range[i]
                 min_dist = hunt_range
                 best_prey = -1
@@ -73,7 +73,7 @@ class PredationBehaviorMixin:
                         continue
 
                     # 只追捕存活且非掠食者的 agent
-                    if self.agent_alive[j] == 1 and self.agent_type[j] != 3:
+                    if self.agent_alive[j] == 1 and self.agent_type_field[j] != 3:
                         # 計算距離（考慮 PBC）
                         dx = ti.Vector([0.0, 0.0, 0.0])
                         if self.params.boundary_mode == 0:  # PBC
@@ -104,7 +104,7 @@ class PredationBehaviorMixin:
         v_np = self.v.to_numpy()
         target_prey_np = self.agent_target_prey.to_numpy()
         alive_np = self.agent_alive.to_numpy()
-        agent_type_np = self.agent_type.to_numpy()
+        agent_type_np = self.agent_type_field.to_numpy()
 
         for i in range(len(x_np)):
             # 只有存活的掠食者才能攻擊
