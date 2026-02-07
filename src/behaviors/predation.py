@@ -221,7 +221,7 @@ class PredationBehaviorMixin:
         """
         x_np = self.x.to_numpy()
         alive_np = self.agent_alive.to_numpy()
-        agent_type_np = self.agent_type.to_numpy()
+        agent_type_np = self.agent_type_field.to_numpy()
 
         prey_pos = x_np[prey_id]
         prey_type = agent_type_np[prey_id]
@@ -277,11 +277,11 @@ class PredationBehaviorMixin:
 
     def get_predator_count(self) -> int:
         """獲取掠食者數量"""
-        agent_type_np = self.agent_type.to_numpy()
+        agent_type_np = self.agent_type_field.to_numpy()
         return int((agent_type_np == 3).sum())
 
     def get_prey_count(self) -> int:
         """獲取獵物數量（非掠食者且存活）"""
-        agent_type_np = self.agent_type.to_numpy()
+        agent_type_np = self.agent_type_field.to_numpy()
         alive_np = self.agent_alive.to_numpy()
         return int(((agent_type_np != 3) & (alive_np == 1)).sum())

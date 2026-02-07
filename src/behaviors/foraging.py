@@ -84,6 +84,10 @@ class ForagingBehaviorMixin:
         N_res = self.resources.n_resources
 
         for i in self.x:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
             energy = self.agent_energy[i]
             current_target = self.agent_target_resource[i]
 
@@ -128,6 +132,10 @@ class ForagingBehaviorMixin:
             velocity_factor: 速度消耗係數（建議 0.3-0.5）
         """
         for i in self.agent_energy:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
             # 基礎消耗
             base_consumption = self.energy_consumption_rate
 
@@ -155,6 +163,10 @@ class ForagingBehaviorMixin:
         副作用：直接修改 v0_individual[i] 來影響速度
         """
         for i in self.agent_energy:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
             energy = self.agent_energy[i]
 
             # 判定健康狀態與速度懲罰

@@ -248,7 +248,7 @@ class TestUtilityFunctions:
         set_leader_goals(system, goal_position=[25.0, 25.0, 25.0])
 
         # 驗證所有 LEADER 有目標
-        agent_types_arr = system.agent_type.to_numpy()
+        agent_types_arr = system.agent_type_field.to_numpy()
         has_goal_arr = system.has_goal.to_numpy()
 
         leader_indices = np.where(agent_types_arr == AgentType.LEADER)[0]

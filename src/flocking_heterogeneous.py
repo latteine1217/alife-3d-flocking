@@ -328,6 +328,10 @@ class HeterogeneousFlocking3D(
 
         # 主循環
         for i in self.x:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
             xi, vi = self.x[i], self.v[i]
             force = ti.Vector([0.0, 0.0, 0.0])
             v_sum = ti.Vector([0.0, 0.0, 0.0])
@@ -452,6 +456,10 @@ class HeterogeneousFlocking3D(
         alpha = self.p[5]
 
         for i in self.v:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
             # 個體參數
             mass_i = self.mass_individual[i]
             v0_i = self.v0_individual[i]
@@ -594,6 +602,11 @@ class HeterogeneousFlocking3D(
 
         # 分配 agents 到 Grid（排除掠食者）
         for i in self.x:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                self.agent_cell_id[i] = -1
+                continue
+
             # 排除掠食者
             if self.agent_type_field[i] == 3:
                 self.agent_cell_id[i] = -1
@@ -621,6 +634,11 @@ class HeterogeneousFlocking3D(
         使用 Spatial Grid 加速鄰居搜尋：O(N) 取代 O(N²)
         """
         for i in self.x:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                self.group_id[i] = -1
+                continue
+
             # 排除掠食者（type=3）不參與群組檢測
             if self.agent_type_field[i] == 3:
                 self.group_id[i] = -1

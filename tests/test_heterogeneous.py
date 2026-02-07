@@ -37,8 +37,8 @@ def test_agent_type_initialization():
     params = FlockingParams(box_size=30.0)
     system = HeterogeneousFlocking3D(N=N, params=params, agent_types=agent_types)
 
-    # 驗證類型分布
-    type_arr = system.agent_type.to_numpy()
+    # 驗證類型分布（只檢查前 N 個活躍 agents）
+    type_arr = system.agent_type_field.to_numpy()[:N]
     assert np.sum(type_arr == AgentType.EXPLORER) == 10
     assert np.sum(type_arr == AgentType.FOLLOWER) == 20
 
