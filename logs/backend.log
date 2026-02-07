@@ -1,0 +1,1593 @@
+[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.13.11
+[Taichi] Starting on arch=metal
+🚀 Creating default system on startup...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=1.0, eta=0.0
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🚀 Server started at ws://localhost:8765
+📡 Waiting for connections...
+✅ Client connected: ('::1', 61243, 0, 0)
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1.5, 'Cr': 2, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 2, 'v0': 1, 'beta': 1, 'eta': 0, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=1, eta=0
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Resetting simulation...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+❌ Client disconnected: ('::1', 61243, 0, 0)
+✅ Client connected: ('::1', 61246, 0, 0)
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+🦁 Predator 99 captured prey 61! (Gained 66.8 energy from prey's 95.4)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+💀 Energy death: 1 agents starved (alive: 99)
+🦁 Predator 98 captured prey 60! (Gained 51.2 energy from prey's 73.1)
+💀 Energy death: 2 agents starved (alive: 98)
+💀 Energy death: 2 agents starved (alive: 98)
+🦁 Predator 96 captured prey 81! (Gained 40.5 energy from prey's 57.8)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+💀 Energy death: 3 agents starved (alive: 97)
+🦁 Predator 97 captured prey 47! (Gained 41.0 energy from prey's 58.6)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 4 agents starved (alive: 96)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 5 agents starved (alive: 95)
+💀 Energy death: 6 agents starved (alive: 94)
+💀 Energy death: 6 agents starved (alive: 94)
+💀 Energy death: 6 agents starved (alive: 94)
+💀 Energy death: 6 agents starved (alive: 94)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 7 agents starved (alive: 93)
+💀 Energy death: 8 agents starved (alive: 92)
+💀 Energy death: 8 agents starved (alive: 92)
+💀 Energy death: 8 agents starved (alive: 92)
+💀 Energy death: 8 agents starved (alive: 92)
+💀 Energy death: 10 agents starved (alive: 90)
+💀 Energy death: 11 agents starved (alive: 89)
+💀 Energy death: 12 agents starved (alive: 88)
+💀 Energy death: 16 agents starved (alive: 84)
+💀 Energy death: 17 agents starved (alive: 83)
+💀 Energy death: 18 agents starved (alive: 82)
+💀 Energy death: 18 agents starved (alive: 82)
+💀 Energy death: 18 agents starved (alive: 82)
+💀 Energy death: 20 agents starved (alive: 80)
+💀 Energy death: 20 agents starved (alive: 80)
+💀 Energy death: 21 agents starved (alive: 79)
+💀 Energy death: 24 agents starved (alive: 76)
+💀 Energy death: 25 agents starved (alive: 75)
+💀 Energy death: 25 agents starved (alive: 75)
+💀 Energy death: 30 agents starved (alive: 70)
+💀 Energy death: 34 agents starved (alive: 66)
+💀 Energy death: 39 agents starved (alive: 61)
+💀 Energy death: 41 agents starved (alive: 59)
+💀 Energy death: 46 agents starved (alive: 54)
+💀 Energy death: 51 agents starved (alive: 49)
+💀 Energy death: 53 agents starved (alive: 47)
+💀 Energy death: 54 agents starved (alive: 46)
+💀 Energy death: 54 agents starved (alive: 46)
+💀 Energy death: 56 agents starved (alive: 44)
+💀 Energy death: 59 agents starved (alive: 41)
+💀 Energy death: 59 agents starved (alive: 41)
+💀 Energy death: 60 agents starved (alive: 40)
+💀 Energy death: 61 agents starved (alive: 39)
+💀 Energy death: 64 agents starved (alive: 36)
+💀 Energy death: 65 agents starved (alive: 35)
+💀 Energy death: 66 agents starved (alive: 34)
+💀 Energy death: 66 agents starved (alive: 34)
+💀 Energy death: 67 agents starved (alive: 33)
+💀 Energy death: 68 agents starved (alive: 32)
+💀 Energy death: 71 agents starved (alive: 29)
+💀 Energy death: 73 agents starved (alive: 27)
+💀 Energy death: 75 agents starved (alive: 25)
+💀 Energy death: 79 agents starved (alive: 21)
+💀 Energy death: 82 agents starved (alive: 18)
+💀 Energy death: 86 agents starved (alive: 14)
+💀 Energy death: 89 agents starved (alive: 11)
+💀 Energy death: 93 agents starved (alive: 7)
+💀 Energy death: 94 agents starved (alive: 6)
+💀 Energy death: 94 agents starved (alive: 6)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 95 agents starved (alive: 5)
+💀 Energy death: 96 agents starved (alive: 4)
+💀 Energy death: 96 agents starved (alive: 4)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 99 agents starved (alive: 1)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+💀 Energy death: 100 agents starved (alive: 0)
+❌ Client disconnected: ('::1', 61246, 0, 0)
+✅ Client connected: ('::1', 61306, 0, 0)
+💀 Energy death: 100 agents starved (alive: 0)
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+✅ Client connected: ('::1', 61307, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61310, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61311, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61312, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61313, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61315, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61316, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61317, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61318, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61319, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61320, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61321, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61322, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61323, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61324, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61325, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61326, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61327, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61328, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61329, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61330, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61331, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61332, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61333, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61334, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61335, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)
+[GroupDetection] Initialized with max_groups=32
+[ForagingBehavior] Initialized with threshold=30.0
+[PredationBehavior] Initialized for N=100 agents
+[HeterogeneousFlocking3D] Agent composition:
+  Follower: 50/100 (beta=1.50, eta=0.05, v0=1.00)
+  Explorer: 30/100 (beta=0.50, eta=0.30, v0=1.30)
+  Leader: 15/100 (beta=1.00, eta=0.15, v0=1.40)
+  Predator: 5/100 (beta=0.00, eta=0.10, v0=1.30)
+  FOV: 120 degrees
+✅ Created Heterogeneous system with N=100
+🔄 Restarting simulation with new parameters...
+✅ Client connected: ('::1', 61336, 0, 0)
+⚠️ Error: 
+File "/Users/latteine/Documents/coding/alife/backend/../src/flocking_3d.py", line 234, in verlet_step1:
+                    force += coeff * rij * inv_r
+                    ^^^^^
+Name "force" is not defined
+📝 Received update_params: {'systemType': 'Heterogeneous', 'N': 100, 'Ca': 1, 'Cr': 1.5, 'la': 2.5, 'lr': 0.5, 'rc': 15, 'alpha': 1.5, 'v0': 1.5, 'beta': 2, 'eta': 0.1, 'boxSize': 50, 'boundaryMode': 'pbc', 'agentConfig': {'explorerRatio': 0.3, 'followerRatio': 0.5, 'enableFov': True, 'fovAngle': 120, 'enableGoals': False, 'goalPosition': [0, 0, 0]}}
+📝 Updating parameters...
+[Taichi] Starting on arch=metal
+[Flocking3D] N=100, Boundary=PBC, beta=2, eta=0.1
+[PerceptionMixin] Initialized:
+  FOV enabled: True
+  FOV angle: 120° (half-angle: 60°)
+  FOV cos threshold: 0.500
+[NavigationMixin] Initialized for N=100 agents
+[SpatialGrid] Initialized 11³ grid (cell_size=5.00, total_cells=1331)

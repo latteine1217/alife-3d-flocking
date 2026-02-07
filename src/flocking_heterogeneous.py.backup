@@ -1,0 +1,1230 @@
+"""
+Heterogeneous 3D Flocking System - Agent 異質性擴展
+
+新增功能：
+    • Agent Types: Explorer / Follower / Leader（不同行為特徵）
+    • Individual Parameters: 每個 agent 有獨立的 beta, eta, v0, mass
+    • Goal-directed Behavior: 目標導向行為（goal seeking）
+    • Field of View (FOV): 視野限制（只能看到前方 120 度範圍）
+
+設計理念：
+    • 繼承 Flocking3D，最小化程式碼重複
+    • 向後相容：可退化為均質系統
+    • 模組化：每個功能可獨立啟用/禁用
+"""
+
+import taichi as ti
+import numpy as np
+from dataclasses import dataclass
+from typing import Optional, List, Dict
+from enum import IntEnum
+
+# 匯入基礎類別
+from flocking_3d import Flocking3D, FlockingParams
+from obstacles import ObstacleSystem, ObstacleConfig
+from resources import ResourceSystem, ResourceConfig
+
+
+class AgentType(IntEnum):
+    """Agent 行為類型"""
+
+    FOLLOWER = 0  # 追隨者：強對齊、低 noise、標準速度
+    EXPLORER = 1  # 探索者：弱對齊、高 noise、快速
+    LEADER = 2  # 領導者：中對齊、中 noise、快速、目標導向
+    PREDATOR = 3  # 掠食者：極快速度、追捕其他 agents、獨行
+
+
+@dataclass
+class AgentTypeProfile:
+    """Agent 類型的行為特徵"""
+
+    name: str
+    beta: float  # 對齊強度
+    eta: float  # Vicsek noise 強度
+    v0: float  # 目標速度
+    mass: float  # 質量
+    goal_strength: float = 0.0  # 目標導向強度（0 = 無目標）
+    hunt_range: float = 20.0  # 追捕範圍（僅用於掠食者）
+    attack_range: float = 2.0  # 攻擊範圍（僅用於掠食者）
+
+
+# 預設類型 profiles
+DEFAULT_PROFILES = {
+    AgentType.FOLLOWER: AgentTypeProfile(
+        name="Follower", beta=1.5, eta=0.05, v0=1.0, mass=1.0, goal_strength=0.0
+    ),
+    AgentType.EXPLORER: AgentTypeProfile(
+        name="Explorer", beta=0.5, eta=0.3, v0=1.3, mass=0.8, goal_strength=0.0
+    ),
+    AgentType.LEADER: AgentTypeProfile(
+        name="Leader", beta=1.0, eta=0.15, v0=1.4, mass=1.2, goal_strength=2.0
+    ),
+    AgentType.PREDATOR: AgentTypeProfile(
+        name="Predator",
+        beta=0.0,  # 不對齊（獨行）
+        eta=0.1,  # 低 noise（專注追捕）
+        v0=1.3,  # 快速但不過度（原 1.8 → 1.3，比 Explorer 快一點）
+        mass=1.5,  # 較重（攻擊力強）
+        goal_strength=0.0,  # 不追目標點
+        hunt_range=20.0,  # 追捕範圍
+        attack_range=2.0,  # 攻擊範圍
+    ),
+}
+
+
+@ti.data_oriented
+class HeterogeneousFlocking3D(Flocking3D):
+    """支援 Agent 異質性的 3D Flocking 系統"""
+
+    def __init__(
+        self,
+        N: int,
+        params: FlockingParams,
+        agent_types: Optional[List[int]] = None,
+        type_profiles: Optional[Dict[int, AgentTypeProfile]] = None,
+        enable_fov: bool = True,
+        fov_angle: float = 120.0,
+        max_obstacles: int = 32,
+        max_groups: int = 32,
+        max_resources: int = 32,
+    ):
+        """
+        初始化異質性系統
+
+        Args:
+            N: 粒子數量
+            params: 基礎物理參數（作為預設值）
+            agent_types: 每個 agent 的類型（長度為 N 的列表）
+            type_profiles: 類型 profile 字典（覆蓋預設值）
+            enable_fov: 是否啟用視野限制
+            fov_angle: 視野角度（度數，預設 120 度）
+            max_obstacles: 最大障礙物數量
+            max_groups: 最大群組數量（用於 group detection）
+            max_resources: 最大資源數量（用於 foraging）
+        """
+        # 先初始化父類別
+        super().__init__(N, params)
+
+        # 視野限制參數
+        self.enable_fov = enable_fov
+        self.fov_cos_angle = np.cos(np.radians(fov_angle / 2.0))  # 半角的 cos 值
+
+        # 類型 profiles（使用預設或自訂）
+        self.type_profiles = type_profiles if type_profiles else DEFAULT_PROFILES
+
+        # 個體參數 fields
+        self.beta_individual = ti.field(ti.f32, N)
+        self.eta_individual = ti.field(ti.f32, N)
+        self.v0_individual = ti.field(ti.f32, N)
+        self.mass_individual = ti.field(ti.f32, N)
+        self.agent_type = ti.field(ti.i32, N)
+
+        # 目標導向參數
+        self.goal = ti.Vector.field(3, ti.f32, N)  # 每個 agent 的目標位置
+        self.has_goal = ti.field(ti.i32, N)  # 是否有目標（0/1）
+        self.goal_strength = ti.field(ti.f32, N)  # 目標導向強度
+
+        # 障礙物系統
+        self.obstacles = ObstacleSystem(max_obstacles=max_obstacles)
+
+        # 群組偵測系統
+        self.max_groups = max_groups
+        self.group_id = ti.field(ti.i32, N)  # 每個 agent 的群組 ID（-1 = 無群組）
+        self.group_size = ti.field(ti.i32, max_groups)  # 每個群組的大小
+        self.group_centroid = ti.Vector.field(3, ti.f32, max_groups)  # 群組質心
+        self.group_velocity = ti.Vector.field(3, ti.f32, max_groups)  # 群組平均速度
+        self.group_active = ti.field(ti.i32, max_groups)  # 群組是否有效（0/1）
+
+        # 初始化群組為無效
+        self.group_id.fill(-1)
+        self.group_active.fill(0)
+
+        # 群組檢測頻率控制
+        self.group_detection_interval = 5  # 每 5 步檢測一次（原 3 → 5）
+        self.step_counter = 0  # 步數計數器
+
+        # ===== Spatial Grid for Group Detection =====
+        # 用於加速群組檢測的空間網格系統
+        # cell_size 設為 r_cluster（預設 5.0），確保鄰居一定在 3×3×3 範圍內
+        self.grid_cell_size = 5.0  # 將在 update_groups() 中根據 r_cluster 動態設置
+        self.grid_resolution = (
+            16  # 初始值，box_size=50 時為 50/5 ≈ 10，設為 16 預留空間
+        )
+        self.max_agents_per_cell = 32  # 每個 cell 最多容納的 agent 數量
+
+        # Grid 資料結構
+        total_cells = self.grid_resolution**3
+        self.agent_cell_id = ti.field(ti.i32, N)  # 每個 agent 所在的 cell ID
+        self.cell_count = ti.field(ti.i32, total_cells)  # 每個 cell 中的 agent 數量
+        self.cell_agents = ti.field(
+            ti.i32, (total_cells, self.max_agents_per_cell)
+        )  # cell → agents 映射
+
+        # 初始化
+        self.agent_cell_id.fill(-1)
+        self.cell_count.fill(0)
+
+        # 資源/覓食系統
+        self.resources = ResourceSystem(max_resources=max_resources)
+
+        # Agent 覓食狀態
+        self.agent_energy = ti.field(ti.f32, N)  # 當前能量
+        self.agent_target_resource = ti.field(ti.i32, N)  # 目標資源 ID（-1 = 無目標）
+        self.energy_threshold = 30.0  # 開始覓食的能量閾值
+        self.energy_consumption_rate = 0.1  # 每步消耗的能量
+
+        # 初始化能量
+        self.agent_energy.fill(100.0)
+        self.agent_target_resource.fill(-1)
+
+        # 掠食者系統
+        self.agent_target_prey = ti.field(
+            ti.i32, N
+        )  # 掠食者的目標獵物 ID（-1 = 無目標）
+        self.agent_alive = ti.field(ti.i32, N)  # agent 是否存活（0/1）
+        self.predator_hunt_range = ti.field(ti.f32, N)  # 追捕範圍（僅掠食者使用）
+        self.predator_attack_range = ti.field(ti.f32, N)  # 攻擊範圍（僅掠食者使用）
+
+        # 初始化
+        self.agent_target_prey.fill(-1)
+        self.agent_alive.fill(1)  # 所有 agent 初始存活
+
+        # 初始化 agent 類型與參數
+        if agent_types is None:
+            # 預設：全部是 FOLLOWER
+            agent_types = [AgentType.FOLLOWER] * N
+
+        self._init_agent_types(agent_types)
+
+        # 輸出系統資訊
+        type_counts = self._count_types()
+        print(f"[HeterogeneousFlocking3D] Agent composition:")
+        for atype, count in type_counts.items():
+            profile = self.type_profiles[atype]
+            print(
+                f"  {profile.name}: {count}/{N} "
+                f"(beta={profile.beta:.2f}, eta={profile.eta:.2f}, v0={profile.v0:.2f})"
+            )
+        if enable_fov:
+            print(f"  FOV: {fov_angle:.0f} degrees")
+
+    def _init_agent_types(self, agent_types: List[int]):
+        """初始化 agent 類型與個體參數"""
+        assert len(agent_types) == self.N, "agent_types 長度必須等於 N"
+
+        # 轉換為 numpy arrays
+        beta_arr = np.zeros(self.N, dtype=np.float32)
+        eta_arr = np.zeros(self.N, dtype=np.float32)
+        v0_arr = np.zeros(self.N, dtype=np.float32)
+        mass_arr = np.zeros(self.N, dtype=np.float32)
+        goal_strength_arr = np.zeros(self.N, dtype=np.float32)
+        hunt_range_arr = np.zeros(self.N, dtype=np.float32)
+        attack_range_arr = np.zeros(self.N, dtype=np.float32)
+        type_arr = np.array(agent_types, dtype=np.int32)
+
+        for i, atype in enumerate(agent_types):
+            profile = self.type_profiles[atype]
+            beta_arr[i] = profile.beta
+            eta_arr[i] = profile.eta
+            v0_arr[i] = profile.v0
+            mass_arr[i] = profile.mass
+            goal_strength_arr[i] = profile.goal_strength
+            hunt_range_arr[i] = profile.hunt_range
+            attack_range_arr[i] = profile.attack_range
+
+        # 上傳到 GPU
+        self.beta_individual.from_numpy(beta_arr)
+        self.eta_individual.from_numpy(eta_arr)
+        self.v0_individual.from_numpy(v0_arr)
+        self.mass_individual.from_numpy(mass_arr)
+        self.goal_strength.from_numpy(goal_strength_arr)
+        self.predator_hunt_range.from_numpy(hunt_range_arr)
+        self.predator_attack_range.from_numpy(attack_range_arr)
+        self.agent_type.from_numpy(type_arr)
+
+        # 保留 NumPy 陣列供序列化器使用
+        self.agent_types_np = type_arr
+
+        # 預設無目標
+        self.has_goal.fill(0)
+
+    def _count_types(self) -> Dict[int, int]:
+        """統計各類型數量"""
+        type_arr = self.agent_type.to_numpy()
+        unique, counts = np.unique(type_arr, return_counts=True)
+        return dict(zip(unique, counts))
+
+    def set_goals(self, goals: np.ndarray, agent_indices: Optional[np.ndarray] = None):
+        """
+        設定目標位置
+
+        Args:
+            goals: 目標位置陣列 (M, 3) 或 (3,)
+            agent_indices: 哪些 agent 有目標（預設：goal_strength > 0 的 agent）
+        """
+        goals = np.atleast_2d(goals).astype(np.float32)
+
+        if agent_indices is None:
+            # 自動選擇：goal_strength > 0 的 agent
+            goal_strength_arr = self.goal_strength.to_numpy()
+            agent_indices = np.where(goal_strength_arr > 0)[0]
+
+        assert len(goals) == len(agent_indices), (
+            "goals 數量必須與 agent_indices 數量相同"
+        )
+
+        # 設定目標
+        for i, idx in enumerate(agent_indices):
+            self.goal[idx] = goals[i]
+            self.has_goal[idx] = 1
+
+    @ti.func
+    def is_in_fov(self, vi: ti.template(), rij: ti.template()) -> ti.i32:
+        """
+        檢查 j 是否在 i 的視野內
+
+        Args:
+            vi: agent i 的速度向量
+            rij: 從 i 指向 j 的向量 (xj - xi)
+
+        Returns:
+            1 if in FOV, 0 otherwise
+        """
+        in_fov = 1
+
+        if ti.static(self.enable_fov):
+            v_norm = vi.norm()
+            r_norm = rij.norm()
+
+            if v_norm > 1e-6 and r_norm > 1e-6:
+                # cos(angle) = vi · rij / (|vi| |rij|)
+                cos_angle = vi.dot(rij) / (v_norm * r_norm)
+                # 在視野內當 cos(angle) > cos(fov_half_angle)
+                if cos_angle < self.fov_cos_angle:
+                    in_fov = 0
+            else:
+                # 速度為零或距離為零，視為在視野內
+                in_fov = 1
+
+        return in_fov
+
+    @ti.func
+    def goal_seeking_force(self, i: ti.i32) -> ti.math.vec3:
+        """計算目標導向力（考慮 PBC）"""
+        force = ti.Vector([0.0, 0.0, 0.0])
+
+        if self.has_goal[i] == 1:
+            # 使用 PBC-aware 距離計算
+            direction = self.pbc_dist(self.x[i], self.goal[i])
+            distance = direction.norm()
+
+            if distance > 1e-6:
+                # 標準化方向 × 強度
+                force = self.goal_strength[i] * direction / distance
+
+        return force
+
+    @ti.kernel
+    def find_nearest_resources(self):
+        """
+        每個 agent 搜尋最近的有效資源
+
+        邏輯：
+            • 若 energy < threshold 且無目標 → 搜尋最近資源
+            • 計算到所有資源的距離
+            • 選擇最近且有效的資源
+        """
+        N_res = self.resources.n_resources
+
+        for i in self.x:
+            energy = self.agent_energy[i]
+            current_target = self.agent_target_resource[i]
+
+            # 檢查是否需要覓食
+            if energy < self.energy_threshold or current_target >= 0:
+                min_dist = 1e10
+                best_res = -1
+
+                # 搜尋所有資源（range-for 避免 nested struct-for）
+                for res_id in range(N_res):
+                    if self.resources.resource_active[res_id] == 1:
+                        if self.resources.resource_amount[res_id] > 0.0:
+                            # 計算距離
+                            res_pos = self.resources.resource_pos[res_id]
+
+                            # 考慮 PBC
+                            dx = ti.Vector([0.0, 0.0, 0.0])
+                            if self.params.boundary_mode == 0:  # PBC
+                                dx = self.pbc_dist(self.x[i], res_pos)
+                            else:
+                                dx = res_pos - self.x[i]
+
+                            dist = dx.norm()
+
+                            if dist < min_dist:
+                                min_dist = dist
+                                best_res = res_id
+
+                # 更新目標
+                self.agent_target_resource[i] = best_res
+
+    @ti.kernel
+    def find_nearest_prey(self):
+        """
+        掠食者搜尋最近的獵物
+
+        邏輯：
+            • 只有 PREDATOR 類型會執行
+            • 搜尋範圍內最近且存活的非掠食者
+            • 更新 agent_target_prey[i]
+        """
+        for i in self.x:
+            # 只有掠食者才追捕
+            if (
+                self.agent_type[i] == 3 and self.agent_alive[i] == 1
+            ):  # AgentType.PREDATOR
+                hunt_range = self.predator_hunt_range[i]
+                min_dist = hunt_range
+                best_prey = -1
+
+                # 搜尋所有存活的非掠食者
+                for j in range(self.N):
+                    if i == j:
+                        continue
+
+                    # 只追捕存活且非掠食者的 agent
+                    if self.agent_alive[j] == 1 and self.agent_type[j] != 3:
+                        # 計算距離（考慮 PBC）
+                        dx = ti.Vector([0.0, 0.0, 0.0])
+                        if self.params.boundary_mode == 0:  # PBC
+                            dx = self.pbc_dist(self.x[i], self.x[j])
+                        else:
+                            dx = self.x[j] - self.x[i]
+
+                        dist = dx.norm()
+
+                        if dist < min_dist:
+                            min_dist = dist
+                            best_prey = j
+
+                # 更新目標獵物
+                self.agent_target_prey[i] = best_prey
+
+    @ti.kernel
+    def compute_forces(self):
+        """
+        計算所有力（使用個體參數 + FOV + 目標導向）
+
+        修改：
+            • 使用 beta_individual[i] 取代全域 beta
+            • 加入 FOV 檢查
+            • 加入 goal seeking force
+        """
+        # 清空
+        for i in self.f:
+            self.f[i] = ti.Vector([0.0, 0.0, 0.0])
+
+        # 讀取參數
+        Ca, Cr = self.p[0], self.p[1]
+        la, lr = self.p[2], self.p[3]
+        rc = self.p[4]
+
+        inv_la, inv_lr = 1.0 / la, 1.0 / lr
+        rc2 = rc * rc
+
+        # 主循環
+        for i in self.x:
+            xi, vi = self.x[i], self.v[i]
+            force = ti.Vector([0.0, 0.0, 0.0])
+            v_sum = ti.Vector([0.0, 0.0, 0.0])
+            n_neighbors = 0
+
+            # 個體參數
+            beta_i = self.beta_individual[i]
+
+            for j in range(self.N):
+                if i == j:
+                    continue
+
+                rij = self.pbc_dist(xi, self.x[j])
+                r2 = rij.dot(rij)
+
+                if r2 < 1e-6 or r2 > rc2:
+                    continue
+
+                r = ti.sqrt(r2)
+                inv_r = 1.0 / r
+
+                # Morse force（無 FOV 限制，保持物理一致性）
+                exp_a = ti.exp(-r * inv_la)
+                exp_r = ti.exp(-r * inv_lr)
+                coeff = Ca * inv_la * exp_a - Cr * inv_lr * exp_r
+                force += coeff * rij * inv_r
+
+                # Alignment force（受 FOV 限制）
+                if beta_i > 0.0:
+                    # FOV 檢查
+                    if self.is_in_fov(vi, rij):
+                        v_sum += self.v[j]
+                        n_neighbors += 1
+
+            # 儲存 Morse 力
+            self.f[i] = force
+
+            # Alignment force
+            if beta_i > 0.0 and n_neighbors > 0:
+                v_avg = v_sum / ti.cast(n_neighbors, ti.f32)
+                self.f[i] += beta_i * (v_avg - vi)
+
+            # Goal seeking force
+            self.f[i] += self.goal_seeking_force(i)
+
+            # Resource-seeking force
+            target_res = self.agent_target_resource[i]
+            if target_res >= 0:
+                if self.resources.resource_active[target_res] == 1:
+                    res_pos = self.resources.resource_pos[target_res]
+
+                    # 計算方向（考慮 PBC）
+                    direction = ti.Vector([0.0, 0.0, 0.0])
+                    if self.params.boundary_mode == 0:  # PBC
+                        direction = self.pbc_dist(xi, res_pos)
+                    else:
+                        direction = res_pos - xi
+
+                    dist = direction.norm()
+
+                    if dist > 1e-6:
+                        # 施加吸引力（類似 goal force）
+                        foraging_strength = 3.0  # 可調整
+                        self.f[i] += foraging_strength * (direction / dist)
+
+            # Predator hunting force (掠食者追捕)
+            if self.agent_type[i] == 3 and self.agent_alive[i] == 1:  # PREDATOR
+                target_prey = self.agent_target_prey[i]
+                if target_prey >= 0 and self.agent_alive[target_prey] == 1:
+                    # 計算方向（考慮 PBC）
+                    direction = ti.Vector([0.0, 0.0, 0.0])
+                    if self.params.boundary_mode == 0:  # PBC
+                        direction = self.pbc_dist(xi, self.x[target_prey])
+                    else:
+                        direction = self.x[target_prey] - xi
+
+                    dist = direction.norm()
+
+                    if dist > 1e-6:
+                        # 強力追捕（比覓食更強）
+                        hunt_strength = 5.0
+                        self.f[i] += hunt_strength * (direction / dist)
+
+            # Prey escape force (獵物逃跑)
+            if self.agent_type[i] != 3 and self.agent_alive[i] == 1:  # 非掠食者
+                # 檢查附近是否有掠食者
+                escape_force = ti.Vector([0.0, 0.0, 0.0])
+                escape_range = 15.0  # 逃跑感知範圍
+
+                for j in range(self.N):
+                    if self.agent_type[j] == 3 and self.agent_alive[j] == 1:  # 是掠食者
+                        # 計算距離
+                        dx = ti.Vector([0.0, 0.0, 0.0])
+                        if self.params.boundary_mode == 0:  # PBC
+                            dx = self.pbc_dist(xi, self.x[j])
+                        else:
+                            dx = self.x[j] - xi
+
+                        dist = dx.norm()
+
+                        if dist < escape_range and dist > 1e-6:
+                            # 逃跑力與距離成反比（越近越強）
+                            escape_strength = 8.0 / (dist + 1.0)
+                            escape_force -= escape_strength * (dx / dist)
+
+                self.f[i] += escape_force
+
+            # Obstacle avoidance force
+            for obs_id in range(self.obstacles.n_obstacles):
+                self.f[i] += self.obstacles.compute_obstacle_force(xi, obs_id)
+
+    @ti.kernel
+    def verlet_step2(self, dt: ti.f32):
+        """
+        Verlet 第二步：使用個體參數
+
+        修改：
+            • 使用 mass_individual[i], v0_individual[i], eta_individual[i]
+        """
+        alpha = self.p[5]
+
+        for i in self.v:
+            # 個體參數
+            mass_i = self.mass_individual[i]
+            v0_i = self.v0_individual[i]
+            eta_i = self.eta_individual[i]
+
+            # 保守力的第二個半步
+            a = self.f[i] / mass_i
+            v_new = self.v[i] + 0.5 * dt * a
+
+            # Rayleigh friction（個體目標速度）
+            v2 = v_new.dot(v_new)
+            v0_sq = v0_i * v0_i
+            rayleigh_coeff = alpha * (1.0 - v2 / (v0_sq + 1e-12))
+            v_new += dt * rayleigh_coeff * v_new
+
+            # Vicsek noise（個體 noise 強度）
+            if eta_i > 0.0:
+                speed = ti.sqrt(v_new.dot(v_new))
+                if speed > 1e-6:
+                    # 更新 RNG 狀態
+                    state = self.rng_state[i]
+
+                    # Random 1: 旋轉角度
+                    state = self.xorshift32(state)
+                    rand1 = self.rand_uniform(state)
+                    noise_angle = (rand1 - 0.5) * 2.0 * eta_i
+
+                    # Random 2-3: 隨機旋轉軸
+                    state = self.xorshift32(state)
+                    rand2 = self.rand_uniform(state)
+                    state = self.xorshift32(state)
+                    rand3 = self.rand_uniform(state)
+
+                    u = rand2 * 2.0 - 1.0
+                    v = rand3 * 2.0 - 1.0
+                    s = u * u + v * v
+
+                    # 初始化旋轉軸
+                    axis = ti.Vector([1.0, 0.0, 0.0])
+
+                    if s < 1.0 and s > 1e-6:
+                        # Marsaglia 方法
+                        sqrt_factor = ti.sqrt(1.0 - s)
+                        axis = ti.Vector(
+                            [
+                                2.0 * u * sqrt_factor,
+                                2.0 * v * sqrt_factor,
+                                1.0 - 2.0 * s,
+                            ]
+                        )
+                    else:
+                        # Fallback
+                        v_norm = v_new / speed
+                        if ti.abs(v_norm[0]) < ti.abs(v_norm[1]):
+                            if ti.abs(v_norm[0]) < ti.abs(v_norm[2]):
+                                axis = ti.Vector([0.0, -v_norm[2], v_norm[1]])
+                            else:
+                                axis = ti.Vector([-v_norm[1], v_norm[0], 0.0])
+                        else:
+                            if ti.abs(v_norm[1]) < ti.abs(v_norm[2]):
+                                axis = ti.Vector([-v_norm[2], 0.0, v_norm[0]])
+                            else:
+                                axis = ti.Vector([-v_norm[1], v_norm[0], 0.0])
+
+                    # 正規化旋轉軸
+                    axis_norm = ti.sqrt(axis.dot(axis))
+                    if axis_norm > 1e-6:
+                        axis /= axis_norm
+
+                    # Rodrigues' rotation
+                    cos_angle = ti.cos(noise_angle)
+                    sin_angle = ti.sin(noise_angle)
+
+                    v_norm = v_new / speed
+                    k_cross_v = ti.Vector(
+                        [
+                            axis[1] * v_norm[2] - axis[2] * v_norm[1],
+                            axis[2] * v_norm[0] - axis[0] * v_norm[2],
+                            axis[0] * v_norm[1] - axis[1] * v_norm[0],
+                        ]
+                    )
+                    k_dot_v = axis.dot(v_norm)
+
+                    v_rotated = (
+                        v_norm * cos_angle
+                        + k_cross_v * sin_angle
+                        + axis * k_dot_v * (1.0 - cos_angle)
+                    )
+
+                    v_new = v_rotated * speed
+                    self.rng_state[i] = state
+
+            self.v[i] = v_new
+
+    # ========================================================================
+    # Resource/Foraging Methods
+    # ========================================================================
+    @ti.kernel
+    def _update_energy_consumption(self):
+        """更新所有 agent 的能量消耗"""
+        for i in self.agent_energy:
+            # 移動消耗能量
+            self.agent_energy[i] = ti.max(
+                0.0, self.agent_energy[i] - self.energy_consumption_rate
+            )
+
+    def consume_resources_step(self, consumption_rate: float = 10.0):
+        """
+        處理資源消耗（每步呼叫一次）
+
+        Args:
+            consumption_rate: 每步消耗資源的速率
+        """
+        # 先更新能量消耗
+        self._update_energy_consumption()
+
+        # 檢查每個 agent 是否在資源範圍內
+        x_np = self.x.to_numpy()
+        target_res_np = self.agent_target_resource.to_numpy()
+
+        for i in range(len(x_np)):
+            target_res = target_res_np[i]
+            if target_res >= 0 and target_res < self.resources.n_resources:
+                # 獲取位置與範圍
+                agent_pos = x_np[i]
+                res_pos = self.resources.resource_pos[target_res].to_numpy()
+                res_radius = self.resources.resource_radius[target_res]
+
+                # 計算距離（簡單歐式距離，可擴展 PBC）
+                distance = np.linalg.norm(agent_pos - res_pos)
+
+                if distance < res_radius:
+                    # 在範圍內：消耗資源、增加能量
+                    consumed = self.resources.consume_resource(
+                        target_res, consumption_rate
+                    )
+
+                    # 增加 agent 能量
+                    current_energy = self.agent_energy[i]
+                    self.agent_energy[i] = min(100.0, current_energy + consumed)
+
+                    # 若資源耗盡或能量已滿，清除目標
+                    if consumed <= 0.0 or self.agent_energy[i] >= 100.0:
+                        self.agent_target_resource[i] = -1
+
+    # Resource management API
+    def add_resource(self, config: ResourceConfig) -> int:
+        """新增資源"""
+        return self.resources.add_resource(config)
+
+    def remove_resource(self, res_id: int):
+        """移除資源"""
+        self.resources.remove_resource(res_id)
+
+    def get_resource_info(self, res_id: int):
+        """獲取資源資訊"""
+        return self.resources.get_resource_info(res_id)
+
+    def get_all_resources(self):
+        """獲取所有資源"""
+        return self.resources.get_all_resources()
+
+    # ========================================================================
+    # Predator/Prey Methods
+    # ========================================================================
+    def attack_prey_step(self):
+        """
+        處理掠食者攻擊（每步呼叫一次）
+
+        邏輯：
+            • 掠食者在攻擊範圍內捕食獵物
+            • 獵物被標記為 agent_alive = 0
+            • 掠食者獲得能量（可選）
+        """
+        x_np = self.x.to_numpy()
+        target_prey_np = self.agent_target_prey.to_numpy()
+        alive_np = self.agent_alive.to_numpy()
+        agent_type_np = self.agent_type.to_numpy()
+
+        for i in range(len(x_np)):
+            # 只有存活的掠食者才能攻擊
+            if agent_type_np[i] == 3 and alive_np[i] == 1:  # PREDATOR
+                target_prey = target_prey_np[i]
+
+                if target_prey >= 0 and alive_np[target_prey] == 1:
+                    # 計算距離
+                    predator_pos = x_np[i]
+                    prey_pos = x_np[target_prey]
+                    distance = np.linalg.norm(predator_pos - prey_pos)
+
+                    # 獲取攻擊範圍
+                    attack_range = self.predator_attack_range[i]
+
+                    if distance < attack_range:
+                        # 捕食成功！
+                        self.agent_alive[target_prey] = 0
+                        self.agent_target_prey[i] = -1  # 清除目標
+
+                        # 掠食者獲得能量（可選）
+                        current_energy = self.agent_energy[i]
+                        self.agent_energy[i] = min(100.0, current_energy + 50.0)
+
+                        print(f"🦁 Predator {i} captured prey {target_prey}!")
+
+    def get_alive_count(self) -> int:
+        """獲取存活 agent 數量"""
+        return int(self.agent_alive.to_numpy().sum())
+
+    def get_predator_count(self) -> int:
+        """獲取掠食者數量"""
+        agent_type_np = self.agent_type.to_numpy()
+        return int((agent_type_np == 3).sum())
+
+    def get_prey_count(self) -> int:
+        """獲取獵物數量（非掠食者且存活）"""
+        agent_type_np = self.agent_type.to_numpy()
+        alive_np = self.agent_alive.to_numpy()
+        return int(((agent_type_np != 3) & (alive_np == 1)).sum())
+
+    # ========================================================================
+    # Group Detection Methods
+    # ========================================================================
+    # Obstacle Management Methods
+    # ========================================================================
+    def add_obstacle(self, config: ObstacleConfig) -> int:
+        """
+        新增障礙物
+
+        Args:
+            config: 障礙物配置
+
+        Returns:
+            障礙物 ID
+        """
+        return self.obstacles.add_obstacle(config)
+
+    def remove_obstacle(self, obs_id: int):
+        """移除障礙物"""
+        self.obstacles.remove_obstacle(obs_id)
+
+    def update_obstacle_position(self, obs_id: int, new_pos: np.ndarray):
+        """更新障礙物位置（支援動態障礙物）"""
+        self.obstacles.update_obstacle_position(obs_id, new_pos)
+
+    def get_obstacle_info(self, obs_id: int) -> dict:
+        """獲取障礙物資訊"""
+        return self.obstacles.get_obstacle_info(obs_id)
+
+    def get_all_obstacles(self) -> List[dict]:
+        """獲取所有障礙物資訊"""
+        return self.obstacles.get_all_obstacles()
+
+    # ========================================================================
+    # Spatial Grid Methods (for accelerating group detection)
+    # ========================================================================
+    @ti.func
+    def get_cell_id(self, pos: ti.template()) -> ti.i32:
+        """
+        計算位置對應的 cell ID
+
+        Args:
+            pos: 3D 位置向量
+
+        Returns:
+            cell_id: 一維 cell index
+        """
+        # 將位置從 [-box_size/2, box_size/2] 映射到 [0, grid_resolution]
+        half_box = self.params.box_size / 2.0
+
+        ix = ti.cast((pos[0] + half_box) / self.grid_cell_size, ti.i32)
+        iy = ti.cast((pos[1] + half_box) / self.grid_cell_size, ti.i32)
+        iz = ti.cast((pos[2] + half_box) / self.grid_cell_size, ti.i32)
+
+        # 邊界處理：clamp 到 [0, grid_resolution-1]
+        ix = ti.max(0, ti.min(ix, self.grid_resolution - 1))
+        iy = ti.max(0, ti.min(iy, self.grid_resolution - 1))
+        iz = ti.max(0, ti.min(iz, self.grid_resolution - 1))
+
+        # 一維化：cell_id = ix + iy * res + iz * res²
+        cell_id = (
+            ix
+            + iy * self.grid_resolution
+            + iz * self.grid_resolution * self.grid_resolution
+        )
+
+        return cell_id
+
+    @ti.kernel
+    def assign_agents_to_grid(self):
+        """
+        將所有 agent 分配到對應的 spatial grid cell
+        時間複雜度：O(N)
+        """
+        # 重置 cell_count
+        for c in self.cell_count:
+            self.cell_count[c] = 0
+
+        # 第一遍：計算每個 agent 的 cell_id
+        for i in self.x:
+            # 排除掠食者
+            if self.agent_type[i] == 3:
+                self.agent_cell_id[i] = -1
+                continue
+
+            cell_id = self.get_cell_id(self.x[i])
+            self.agent_cell_id[i] = cell_id
+
+            # 原子操作：計數該 cell 的 agent 數量
+            old_count = ti.atomic_add(self.cell_count[cell_id], 1)
+
+            # 將 agent 加入該 cell（如果未滿）
+            if old_count < self.max_agents_per_cell:
+                self.cell_agents[cell_id, old_count] = i
+
+    @ti.func
+    def get_neighbor_cells(self, cell_id: ti.i32) -> ti.types.vector(27, ti.i32):
+        """
+        獲取指定 cell 的所有鄰居 cell（包含自己）
+
+        Args:
+            cell_id: 中心 cell 的 ID
+
+        Returns:
+            neighbor_cells: 最多 27 個鄰居 cell 的 ID（3×3×3）
+        """
+        # 解析 cell_id 為 (ix, iy, iz)
+        res = self.grid_resolution
+        iz = cell_id // (res * res)
+        remainder = cell_id % (res * res)
+        iy = remainder // res
+        ix = remainder % res
+
+        # 遍歷 3×3×3 的鄰居 cell
+        neighbors = ti.Vector([0] * 27, dt=ti.i32)
+        count = 0
+
+        for dz in ti.static(range(-1, 2)):
+            for dy in ti.static(range(-1, 2)):
+                for dx in ti.static(range(-1, 2)):
+                    nx = ix + dx
+                    ny = iy + dy
+                    nz = iz + dz
+
+                    # 邊界檢查
+                    if (
+                        nx >= 0
+                        and nx < res
+                        and ny >= 0
+                        and ny < res
+                        and nz >= 0
+                        and nz < res
+                    ):
+                        neighbor_cell = nx + ny * res + nz * res * res
+                        neighbors[count] = neighbor_cell
+                        count += 1
+
+        # 剩餘位置填 -1（無效）
+        for k in range(count, 27):
+            neighbors[k] = -1
+
+        return neighbors
+
+    # ========================================================================
+    # Group Detection Methods
+    # ========================================================================
+    @ti.kernel
+    def detect_groups_iteration(self, r_cluster: ti.f32, theta_cluster: ti.f32):
+        """
+        執行單次群組偵測迭代（label propagation 的一輪）
+        使用 Spatial Grid 加速鄰居搜尋：O(N) 取代 O(N²)
+
+        條件：
+            • 兩個 agents 距離 < r_cluster
+            • 速度夾角 < theta_cluster
+
+        Args:
+            r_cluster: 聚類距離閾值
+            theta_cluster: 速度夾角閾值（弧度）
+        """
+        for i in self.x:
+            # 排除掠食者（type=3）不參與群組檢測
+            if self.agent_type[i] == 3:
+                self.group_id[i] = -1
+                continue
+
+            xi = self.x[i]
+            vi = self.v[i]
+            vi_norm = vi.norm()
+
+            if vi_norm < 1e-6:
+                continue
+
+            current_group = self.group_id[i]
+            min_group = current_group
+
+            # 獲取 agent i 所在的 cell
+            cell_id = self.agent_cell_id[i]
+            if cell_id < 0:  # 無效 cell（不應該發生）
+                continue
+
+            # 解析 cell_id 為 3D index (ix, iy, iz)
+            res = self.grid_resolution
+            iz = cell_id // (res * res)
+            remainder = cell_id % (res * res)
+            iy = remainder // res
+            ix = remainder % res
+
+            # 只檢查 3×3×3=27 個相鄰 cell 中的 agents（取代原本的 O(N) 全局搜尋）
+            for dz in ti.static(range(-1, 2)):
+                for dy in ti.static(range(-1, 2)):
+                    for dx in ti.static(range(-1, 2)):
+                        nx = ix + dx
+                        ny = iy + dy
+                        nz = iz + dz
+
+                        # 邊界檢查：只處理有效的鄰居 cell
+                        if (
+                            nx >= 0
+                            and nx < res
+                            and ny >= 0
+                            and ny < res
+                            and nz >= 0
+                            and nz < res
+                        ):
+                            neighbor_cell = nx + ny * res + nz * res * res
+
+                            # 檢查該 cell 中的所有 agents
+                            n_agents_in_cell = self.cell_count[neighbor_cell]
+                            for local_idx in range(n_agents_in_cell):
+                                if local_idx >= self.max_agents_per_cell:
+                                    break
+
+                                j = self.cell_agents[neighbor_cell, local_idx]
+                                if i == j:
+                                    continue
+
+                                # 排除掠食者
+                                if self.agent_type[j] == 3:
+                                    continue
+
+                                xj = self.x[j]
+                                vj = self.v[j]
+                                vj_norm = vj.norm()
+
+                                if vj_norm < 1e-6:
+                                    continue
+
+                                # 計算距離（考慮 PBC）
+                                distance = 0.0
+                                if self.params.boundary_mode == 0:  # PBC
+                                    distance = self.pbc_dist(xi, xj).norm()
+                                else:
+                                    distance = (xj - xi).norm()
+
+                                # 檢查空間接近度
+                                if distance > r_cluster:
+                                    continue
+
+                                # 檢查速度夾角
+                                cos_angle = (vi.dot(vj)) / (vi_norm * vj_norm)
+                                # 處理數值誤差
+                                cos_angle = ti.max(-1.0, ti.min(1.0, cos_angle))
+                                angle = ti.acos(cos_angle)
+
+                                if angle > theta_cluster:
+                                    continue
+
+                                # 滿足條件：取較小的 group_id
+                                neighbor_group = self.group_id[j]
+                                if neighbor_group < min_group:
+                                    min_group = neighbor_group
+
+            # 更新 group_id
+            self.group_id[i] = min_group
+
+    @ti.kernel
+    def compute_group_statistics(self):
+        """
+        計算每個群組的統計資訊
+
+        計算：
+            • group_size: 群組大小
+            • group_centroid: 質心位置
+            • group_velocity: 平均速度
+        """
+        # 重置統計資訊
+        for g in range(self.max_groups):
+            self.group_size[g] = 0
+            self.group_centroid[g] = ti.Vector([0.0, 0.0, 0.0])
+            self.group_velocity[g] = ti.Vector([0.0, 0.0, 0.0])
+            self.group_active[g] = 0
+
+        # 第一輪：計算每個群組的總和（排除掠食者）
+        for i in self.x:
+            # 掠食者不參與群組統計
+            if self.agent_type[i] == 3:
+                continue
+
+            gid = self.group_id[i]
+            if gid >= 0 and gid < self.max_groups:
+                # 使用 atomic add 避免 race condition
+                ti.atomic_add(self.group_size[gid], 1)
+                for d in ti.static(range(3)):
+                    ti.atomic_add(self.group_centroid[gid][d], self.x[i][d])
+                    ti.atomic_add(self.group_velocity[gid][d], self.v[i][d])
+
+        # 第二輪：計算平均值並標記有效群組
+        for g in range(self.max_groups):
+            size = self.group_size[g]
+            if size > 0:
+                self.group_active[g] = 1
+                # 計算平均值
+                for d in ti.static(range(3)):
+                    self.group_centroid[g][d] /= ti.cast(size, ti.f32)
+                    self.group_velocity[g][d] /= ti.cast(size, ti.f32)
+
+    def update_groups(
+        self, r_cluster: float = 5.0, theta_cluster: float = 30.0, n_iterations: int = 5
+    ):
+        """
+        更新群組偵測（Python 介面）
+        使用 Spatial Grid 加速：O(N) 取代 O(N²)
+
+        Args:
+            r_cluster: 聚類距離閾值
+            theta_cluster: 速度夾角閾值（度數）
+            n_iterations: 迭代次數
+        """
+        theta_rad = np.radians(theta_cluster)
+
+        # 動態更新 grid_cell_size（確保 cell_size = r_cluster）
+        self.grid_cell_size = r_cluster
+        self.grid_resolution = max(
+            int(self.params.box_size / r_cluster) + 1, 4
+        )  # 最小 4×4×4
+
+        # Step 1: 將 agents 分配到 spatial grid（O(N)）
+        self.assign_agents_to_grid()
+
+        # Step 2: 初始化：每個 agent 自己是一個群組
+        self.group_id.fill(-1)
+        for i in range(len(self.x.to_numpy())):
+            # 掠食者不參與群組
+            if self.agent_types_np[i] != 3:
+                self.group_id[i] = i
+
+        # Step 3: 執行多輪迭代（使用 Grid 加速的鄰居搜尋）
+        for iteration in range(n_iterations):
+            self.detect_groups_iteration(r_cluster, theta_rad)
+
+        # Step 4: 計算群組統計
+        self.compute_group_statistics()
+
+    def get_group_info(self, group_id: int) -> Optional[dict]:
+        """
+        獲取群組資訊
+
+        Args:
+            group_id: 群組 ID
+
+        Returns:
+            群組資訊字典，若群組無效則返回 None
+        """
+        if group_id < 0 or group_id >= self.max_groups:
+            return None
+
+        if self.group_active[group_id] == 0:
+            return None
+
+        return {
+            "group_id": group_id,
+            "size": self.group_size[group_id],
+            "centroid": self.group_centroid[group_id].to_numpy(),
+            "velocity": self.group_velocity[group_id].to_numpy(),
+        }
+
+    def get_all_groups(self) -> List[dict]:
+        """獲取所有有效群組的資訊"""
+        groups = []
+        for g in range(self.max_groups):
+            info = self.get_group_info(g)
+            if info is not None:
+                groups.append(info)
+        return groups
+
+    def get_agent_groups(self) -> np.ndarray:
+        """獲取每個 agent 的群組 ID（返回 numpy 陣列）"""
+        return self.group_id.to_numpy()
+
+    def step(self, dt: float):
+        """
+        執行一個時間步（覆寫父類別方法以整合異質與捕食者邏輯）
+
+        整合順序：
+            1. 更新資源與獵物目標
+            2. 計算力（包含捕食/逃脫力）
+            3. Verlet 積分器
+            4. 資源消耗與捕食攻擊
+            5. 資源再生
+            6. 群組檢測（每 N 步執行一次）
+        """
+        # 1. 更新目標
+        self.find_nearest_resources()  # 低能量 agent 尋找資源
+        self.find_nearest_prey()  # 捕食者鎖定獵物
+
+        # 2-3. 物理更新（Velocity Verlet）
+        self.compute_forces()  # 計算所有力（含捕食/逃脫）
+        self.verlet_step1(dt)
+        self.compute_forces()
+        self.verlet_step2(dt)
+
+        # 4. 生態互動
+        self.consume_resources_step(consumption_rate=10.0)  # Agent 消耗資源
+        self.attack_prey_step()  # 捕食者攻擊獵物
+
+        # 5. 環境更新
+        self.resources.replenish_resources()  # 資源再生
+
+        # 6. 群組檢測（每 N 步執行一次以減少計算負擔）
+        # 第一步（step_counter=0）強制執行一次，確保有初始群組資料
+        # 降低迭代次數：5 → 3（Label Propagation 收斂很快）
+        if self.step_counter == 0 or self.step_counter >= self.group_detection_interval:
+            self.update_groups(r_cluster=5.0, theta_cluster=30.0, n_iterations=3)
+            self.step_counter = 1  # 重置為 1（下次在 interval 時執行）
+        else:
+            self.step_counter += 1
+
+
+# ============================================================================
+# Demo & Testing Utilities
+# ============================================================================
+# Demo & Testing Utilities
+# ============================================================================
+if __name__ == "__main__":
+    print("=" * 70)
+    print("Heterogeneous Flocking 3D - Quick Test")
+    print("=" * 70)
+
+    # 建立混合群體：20% Explorer, 70% Follower, 10% Leader
+    N = 100
+    agent_types = (
+        [AgentType.EXPLORER] * 20 + [AgentType.FOLLOWER] * 70 + [AgentType.LEADER] * 10
+    )
+
+    params = FlockingParams(
+        Ca=1.5,
+        Cr=2.0,
+        la=2.5,
+        lr=0.5,
+        rc=15.0,
+        alpha=2.0,
+        beta=1.0,  # 基礎值（會被個體參數覆蓋）
+        box_size=50.0,
+    )
+
+    system = HeterogeneousFlocking3D(
+        N=N, params=params, agent_types=agent_types, enable_fov=True, fov_angle=120.0
+    )
+
+    system.initialize(box_size=5.0, seed=42)
+
+    # 設定目標：Leaders 向 (10, 10, 10) 移動
+    leader_indices = np.where(np.array(agent_types) == AgentType.LEADER)[0]
+    goals = np.tile([10.0, 10.0, 10.0], (len(leader_indices), 1))
+    system.set_goals(goals, leader_indices)
+
+    print("\n執行 100 步模擬...")
+    system.run(steps=100, dt=0.01, log_every=20)
+
+    print("\n" + "=" * 70)
+    print("✅ Quick test 完成")
+    print("=" * 70)

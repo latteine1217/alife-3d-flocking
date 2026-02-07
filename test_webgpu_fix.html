@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU 粒子測試</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+            font-family: monospace;
+        }
+        #canvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 20px auto;
+        }
+        #status {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #log {
+            background: #111;
+            padding: 10px;
+            border: 1px solid #333;
+            height: 200px;
+            overflow-y: scroll;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebGPU 粒子渲染測試</h1>
+    
+    <div id="status">
+        <p>WebSocket: <span id="ws-status">未連接</span></p>
+        <p>粒子數: <span id="particle-count">0</span></p>
+        <p>幀數: <span id="frame-count">0</span></p>
+        <button onclick="connect()">連接伺服器</button>
+        <button onclick="start()">開始模擬</button>
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div id="log"></div>
+
+    <script type="module">
+        let ws = null;
+        let particleCount = 0;
+        let frameCount = 0;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        window.connect = async function() {
+            try {
+                log('🔄 正在連接到 ws://localhost:8765...');
+                ws = new WebSocket('ws://localhost:8765');
+                ws.binaryType = 'arraybuffer';
+
+                ws.onopen = () => {
+                    log('✅ WebSocket 連接成功');
+                    document.getElementById('ws-status').textContent = '已連接';
+                    document.getElementById('ws-status').style.color = '#48bb78';
+                };
+
+                ws.onmessage = (event) => {
+                    if (event.data instanceof ArrayBuffer) {
+                        handleBinaryData(event.data);
+                    } else {
+                        log('📨 收到 JSON: ' + event.data);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log('❌ WebSocket 錯誤');
+                    document.getElementById('ws-status').textContent = '錯誤';
+                    document.getElementById('ws-status').style.color = '#fc8181';
+                };
+
+                ws.onclose = () => {
+                    log('🔌 WebSocket 已關閉');
+                    document.getElementById('ws-status').textContent = '未連接';
+                    document.getElementById('ws-status').style.color = '#fff';
+                };
+            } catch (error) {
+                log('❌ 連接失敗: ' + error.message);
+            }
+        };
+
+        window.start = function() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ 請先連接到伺服器');
+                return;
+            }
+            log('▶️ 發送 start 命令...');
+            ws.send(JSON.stringify({ type: 'start' }));
+        };
+
+        function handleBinaryData(buffer) {
+            frameCount++;
+            
+            // 解析 header
+            const view = new DataView(buffer);
+            const N = view.getUint32(0, true);
+            const step = view.getUint32(4, true);
+            
+            if (N !== particleCount) {
+                particleCount = N;
+                document.getElementById('particle-count').textContent = N;
+                log(`📊 粒子數更新: N=${N}`);
+            }
+            
+            document.getElementById('frame-count').textContent = frameCount;
+            
+            // 每秒記錄一次
+            if (frameCount % 30 === 0) {
+                log(`✅ 第 ${frameCount} 幀: N=${N}, step=${step}, buffer=${buffer.byteLength} bytes`);
+                
+                // 讀取第一個粒子的位置
+                const offset = 20; // header size
+                const x = view.getFloat32(offset, true);
+                const y = view.getFloat32(offset + 4, true);
+                const z = view.getFloat32(offset + 8, true);
+                log(`   粒子[0]: (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
+            }
+        }
+
+        // 自動連接
+        log('🚀 頁面載入完成');
+        log('👉 點擊「連接伺服器」按鈕開始');
+    </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGPU Point Size Test</title>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script type="module">
+        const canvas = document.getElementById('canvas');
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+        const context = canvas.getContext('webgpu');
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        
+        context.configure({ device, format });
+        
+        // Test: Can we render points at all?
+        const shaderCode = `
+            @vertex
+            fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
+                return vec4f(0.0, 0.0, 0.0, 1.0);
+            }
+            
+            @fragment
+            fn fs_main() -> @location(0) vec4f {
+                return vec4f(1.0, 0.0, 0.0, 1.0);
+            }
+        `;
+        
+        const module = device.createShaderModule({ code: shaderCode });
+        const pipeline = device.createRenderPipeline({
+            layout: 'auto',
+            vertex: { module, entryPoint: 'vs_main' },
+            fragment: { module, entryPoint: 'fs_main', targets: [{ format }] },
+            primitive: { topology: 'point-list' },
+        });
+        
+        const commandEncoder = device.createCommandEncoder();
+        const renderPass = commandEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: context.getCurrentTexture().createView(),
+                clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                loadOp: 'clear',
+                storeOp: 'store',
+            }],
+        });
+        
+        renderPass.setPipeline(pipeline);
+        renderPass.draw(1);
+        renderPass.end();
+        device.queue.submit([commandEncoder.finish()]);
+        
+        console.log('Point rendered. Check canvas for red dot.');
+    </script>
+</body>
+</html>
