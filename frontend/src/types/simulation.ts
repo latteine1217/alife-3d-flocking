@@ -71,6 +71,7 @@ export interface SimulationParams {
   agentConfig?: {
     explorerRatio: number;
     followerRatio: number;
+    predatorRatio: number;
     enableFov: boolean;
     fovAngle: number;
     enableGoals: boolean;
@@ -137,6 +138,7 @@ export const DEFAULT_PARAMS: SimulationParams = {
   agentConfig: {
     explorerRatio: 0.3,
     followerRatio: 0.5,
+    predatorRatio: 0.05,
     enableFov: true,
     fovAngle: 120.0,
     enableGoals: false,

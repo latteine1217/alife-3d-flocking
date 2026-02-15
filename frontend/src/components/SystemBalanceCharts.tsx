@@ -14,7 +14,7 @@ interface BalanceSample {
   nGroups: number;
   // 能量系統
   predatorEnergy: number;
-  resourceEnergy: number;
+  resourceTotal: number;
   totalEnergy: number;
 }
 
@@ -25,7 +25,10 @@ export function SystemBalanceCharts() {
   const [history, setHistory] = useState<BalanceSample[]>([]);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state) {
+      setHistory([]);
+      return;
+    }
 
     const HUNGER_THRESHOLD = 30.0;
 
@@ -34,13 +37,11 @@ export function SystemBalanceCharts() {
     let predatorCount = 0;
     let predatorEnergy = 0;
     let nonPredatorEnergy = 0;
-    let maxAgentEnergy = 1;
     let hungryCount = 0;
 
     for (let i = 0; i < state.energies.length; i++) {
       const e = state.energies[i];
       const t = state.types[i];
-      if (e > maxAgentEnergy) maxAgentEnergy = e;
       if (e < HUNGER_THRESHOLD) hungryCount++;
 
       if (t === 3) { // PREDATOR
@@ -58,12 +59,11 @@ export function SystemBalanceCharts() {
     const preyCount = totalAlive - predatorCount;
     const lotkaVolterra = preyCount > 0 ? predatorCount / preyCount : 0;
 
-    let resourceRatioSum = 0;
+    let resourceTotal = 0;
     for (let i = 0; i < state.resources.length; i++) {
-      resourceRatioSum += state.resources[i].amount;
+      resourceTotal += state.resources[i].amount;
     }
-    const resourceEnergy = resourceRatioSum * maxAgentEnergy;
-    const totalEnergy = nonPredatorEnergy + predatorEnergy + resourceEnergy;
+    const totalEnergy = nonPredatorEnergy + predatorEnergy + resourceTotal;
 
     const nextSample: BalanceSample = {
       step: state.step,
@@ -75,7 +75,7 @@ export function SystemBalanceCharts() {
       lotkaVolterra,
       nGroups: state.stats.nGroups,
       predatorEnergy,
-      resourceEnergy,
+      resourceTotal,
       totalEnergy,
     };
 
@@ -87,12 +87,6 @@ export function SystemBalanceCharts() {
       if (next.length > MAX_POINTS) next.shift();
       return next;
     });
-  }, [state]);
-
-  useEffect(() => {
-    if (!state) {
-      setHistory([]);
-    }
   }, [state]);
 
   const latest = history.length > 0 ? history[history.length - 1] : null;
