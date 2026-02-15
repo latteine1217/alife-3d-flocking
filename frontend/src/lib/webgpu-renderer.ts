@@ -1562,25 +1562,15 @@ export class WebGPURenderer {
     renderPass.draw(24); // 12 edges * 2 vertices
     
     // 5. 繪製 velocity trails（在粒子之前，作為背景）
-    if (this.enableTrails && this.trailBuffer && this.positionHistory.length > 1) {
+    if (this.enableTrails && this.trailBuffer && this.trailIndexBuffer && this.positionHistory.length > 1) {
       const historyCount = this.positionHistory.length;
-      
-      // DEBUG: Log trail rendering
-      if (Math.random() < 0.016) {
-        console.log(`🎨 Drawing trails: historyCount=${historyCount}, particleCount=${this.particleCount}`);
-      }
-      
+      const totalIndexCount = this.particleCount * (historyCount + 1);
+
       renderPass.setPipeline(this.trailPipeline);
       renderPass.setBindGroup(0, this.bindGroup);
       renderPass.setVertexBuffer(0, this.trailBuffer);
-      
-      // 每個粒子繪製一條 line-strip
-      for (let i = 0; i < this.particleCount; i++) {
-        const firstVertex = i * historyCount;
-        renderPass.draw(historyCount, 1, firstVertex, 0);
-      }
-    } else if (Math.random() < 0.016) {
-      console.log(`⚠️ Trails skipped: enableTrails=${this.enableTrails}, trailBuffer=${!!this.trailBuffer}, historyCount=${this.positionHistory.length}`);
+      renderPass.setIndexBuffer(this.trailIndexBuffer, 'uint32');
+      renderPass.drawIndexed(totalIndexCount);
     }
     
     // 6. 繪製 resources（在粒子之前，作為半透明物體）
