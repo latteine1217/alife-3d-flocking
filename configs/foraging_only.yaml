@@ -1,0 +1,38 @@
+meta:
+  name: "Foraging Only"
+  description: "無捕食者：純覓食動態，觀察資源枯竭與能量平衡"
+
+simulation:
+  N: 80
+  Ca: 1.5
+  Cr: 2.0
+  la: 2.5
+  lr: 0.5
+  rc: 15.0
+  alpha: 2.0
+  v0: 1.0
+  beta: 1.2
+  eta: 0.0
+  boxSize: 40.0
+  boundaryMode: "pbc"
+
+agents:
+  explorerRatio: 0.4
+  followerRatio: 0.6
+  predatorRatio: 0.0
+  enableFov: true
+  fovAngle: 150.0
+
+resources:
+  - position: [10.0, 10.0, 10.0]
+    amount: 400.0
+    radius: 7.0
+    renewable: true
+    replenishRate: 60.0
+    maxAmount: 600.0
+  - position: [-10.0, -10.0, -10.0]
+    amount: 400.0
+    radius: 7.0
+    renewable: true
+    replenishRate: 60.0
+    maxAmount: 600.0

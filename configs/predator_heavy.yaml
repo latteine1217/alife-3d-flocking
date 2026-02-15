@@ -1,0 +1,38 @@
+meta:
+  name: "Predator Heavy"
+  description: "高捕食者密度：測試族群崩潰與恢復動態"
+
+simulation:
+  N: 120
+  Ca: 1.5
+  Cr: 2.0
+  la: 2.5
+  lr: 0.5
+  rc: 15.0
+  alpha: 2.0
+  v0: 1.2
+  beta: 1.0
+  eta: 0.05
+  boxSize: 50.0
+  boundaryMode: "pbc"
+
+agents:
+  explorerRatio: 0.3
+  followerRatio: 0.5
+  predatorRatio: 0.15
+  enableFov: true
+  fovAngle: 120.0
+
+resources:
+  - position: [16.0, 14.0, 15.0]
+    amount: 300.0
+    radius: 6.0
+    renewable: true
+    replenishRate: 120.0
+    maxAmount: 500.0
+  - position: [-17.0, 15.0, -14.0]
+    amount: 300.0
+    radius: 6.0
+    renewable: true
+    replenishRate: 120.0
+    maxAmount: 500.0

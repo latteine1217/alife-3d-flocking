@@ -1,0 +1,45 @@
+# Default experiment: balanced predator-prey ecosystem
+meta:
+  name: "Default Balanced"
+  description: "平衡的捕食者-獵物生態系統，適合基礎觀察"
+
+simulation:
+  N: 100
+  Ca: 1.5
+  Cr: 2.0
+  la: 2.5
+  lr: 0.5
+  rc: 15.0
+  alpha: 2.0
+  v0: 1.0
+  beta: 1.0
+  eta: 0.0
+  boxSize: 50.0
+  boundaryMode: "pbc"
+
+agents:
+  explorerRatio: 0.3
+  followerRatio: 0.5
+  predatorRatio: 0.05
+  enableFov: true
+  fovAngle: 120.0
+
+resources:
+  - position: [16.0, 14.0, 15.0]
+    amount: 280.0
+    radius: 5.5
+    renewable: true
+    replenishRate: 90.0
+    maxAmount: 420.0
+  - position: [-17.0, 15.0, -14.0]
+    amount: 260.0
+    radius: 5.0
+    renewable: true
+    replenishRate: 85.0
+    maxAmount: 380.0
+  - position: [14.0, -16.0, -13.0]
+    amount: 250.0
+    radius: 4.8
+    renewable: true
+    replenishRate: 80.0
+    maxAmount: 360.0
