@@ -107,24 +107,77 @@ export function SystemBalanceCharts() {
       {history.length < 2 ? (
         <div className="balance-empty">Waiting for enough frames to draw charts...</div>
       ) : (
-        <div className="balance-grid">
-          <LineChartCard
-            title="Agent Count"
-            unit="agents"
-            color="#27d3a2"
-            samples={history}
-            valueAccessor={(sample) => sample.totalAlive}
-            latestValue={latest?.totalAlive ?? 0}
-          />
-          <LineChartCard
-            title="Total System Energy"
-            unit="energy"
-            color="#ffb347"
-            samples={history}
-            valueAccessor={(sample) => sample.totalEnergy}
-            latestValue={latest?.totalEnergy ?? 0}
-          />
-        </div>
+        <>
+          <div className="balance-grid">
+            <LineChartCard
+              title="Total Alive"
+              unit="agents"
+              color="#27d3a2"
+              samples={history}
+              valueAccessor={(s) => s.totalAlive}
+              latestValue={latest?.totalAlive ?? 0}
+            />
+            <LineChartCard
+              title="Explorer Count"
+              unit="agents"
+              color="#58c4e0"
+              samples={history}
+              valueAccessor={(s) => s.explorerCount}
+              latestValue={latest?.explorerCount ?? 0}
+            />
+            <LineChartCard
+              title="Follower Count"
+              unit="agents"
+              color="#a0c878"
+              samples={history}
+              valueAccessor={(s) => s.followerCount}
+              latestValue={latest?.followerCount ?? 0}
+            />
+            <LineChartCard
+              title="Predator Count"
+              unit="agents"
+              color="#e05c5c"
+              samples={history}
+              valueAccessor={(s) => s.predatorCount}
+              latestValue={latest?.predatorCount ?? 0}
+            />
+          </div>
+
+          <div className="balance-grid">
+            <LineChartCard
+              title="Hunger Ratio"
+              unit="%"
+              color="#ffb347"
+              samples={history}
+              valueAccessor={(s) => s.hungerRatio * 100}
+              latestValue={(latest?.hungerRatio ?? 0) * 100}
+            />
+            <LineChartCard
+              title="Predator / Prey"
+              unit="ratio"
+              color="#c084e0"
+              samples={history}
+              valueAccessor={(s) => s.lotkaVolterra}
+              latestValue={latest?.lotkaVolterra ?? 0}
+            />
+            <LineChartCard
+              title="Active Groups"
+              unit="groups"
+              color="#60b0f4"
+              samples={history}
+              valueAccessor={(s) => s.nGroups}
+              latestValue={latest?.nGroups ?? 0}
+            />
+            <LineChartCard
+              title="Total System Energy"
+              unit="energy"
+              color="#ffb347"
+              samples={history}
+              valueAccessor={(s) => s.totalEnergy}
+              latestValue={latest?.totalEnergy ?? 0}
+            />
+          </div>
+        </>
       )}
     </section>
   );
