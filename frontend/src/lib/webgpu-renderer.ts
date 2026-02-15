@@ -1412,8 +1412,6 @@ export class WebGPURenderer {
     const { positions, velocities, types, groupLabels, boxSize, resources, groups } = data;
     const N = positions.length / 3;
     
-    console.log(`🔄 updateParticles called: N=${N}, positions.length=${positions.length}`);
-    
     if (N === 0) return;
     
     // 保存速度資料（用於速度向量渲染）
@@ -1472,13 +1470,6 @@ export class WebGPURenderer {
       typesU32[i] = types[i];
     }
     
-    // Debug: 檢查掠食者 (type=3)
-    const predatorIndices = Array.from(typesU32).map((t, i) => t === 3 ? i : -1).filter(i => i !== -1);
-    if (predatorIndices.length > 0) {
-      console.log(`🦁 Found ${predatorIndices.length} predators at indices:`, predatorIndices);
-      console.log('Predator positions:', predatorIndices.map(i => [positions[i*3], positions[i*3+1], positions[i*3+2]]));
-    }
-    
     if (!this.typeBuffer || this.particleCount !== N) {
       if (this.typeBuffer) {
         this.typeBuffer.destroy();
@@ -1512,7 +1503,6 @@ export class WebGPURenderer {
     }
     
     this.particleCount = N;
-    console.log(`✅ updateParticles complete: particleCount=${this.particleCount}`);
   }
   
   /**
@@ -1598,10 +1588,6 @@ export class WebGPURenderer {
           renderPass.setVertexBuffer(1, this.groupSphereInstanceBuffer);
           renderPass.setIndexBuffer(this.sphereIndexBuffer, 'uint16');
           renderPass.drawIndexed(this.sphereIndexCount, this.groupCount, 0, 0, 0);
-          
-          if (Math.random() < 0.016) {
-            console.log(`🔮 Drawing ${this.groupCount} group boundaries`);
-          }
         } catch (error) {
           console.error('❌ Error drawing group boundaries:', error);
           this.enableGroupBoundaries = false; // 關閉以避免持續錯誤
@@ -1620,15 +1606,6 @@ export class WebGPURenderer {
         renderPass.setVertexBuffer(3, this.groupLabelBuffer); // Group labels (instanced, conditional)
       }
       renderPass.draw(6, this.particleCount, 0, 0);          // 6 vertices per quad, N instances
-      
-      // DEBUG: Log once per second
-      if (Math.random() < 0.016) {  // ~1/60 chance
-        console.log(`🎨 Drawing ${this.particleCount} particles (6 vertices × ${this.particleCount} instances = ${6 * this.particleCount} total)`);
-      }
-    } else {
-      if (Math.random() < 0.016) {
-        console.log('⚠️ No particles to draw (particleCount = 0)');
-      }
     }
     
     // 8. 繪製速度向量（在粒子之後，作為疊加層）
@@ -1639,10 +1616,6 @@ export class WebGPURenderer {
         renderPass.setBindGroup(0, this.bindGroup);
         renderPass.setVertexBuffer(0, this.velocityVectorBuffer);
         renderPass.draw(this.particleCount * 2); // 每個粒子2個頂點（起點和終點）
-        
-        if (Math.random() < 0.016) {
-          console.log(`🎨 Drawing ${this.particleCount} velocity vectors`);
-        }
       }
     }
     
@@ -1655,10 +1628,6 @@ export class WebGPURenderer {
           renderPass.setBindGroup(0, this.bindGroup);
           renderPass.setVertexBuffer(0, this.groupVelocityArrowBuffer);
           renderPass.draw(this.groupVelocityData.length * 2); // 每個群組2個頂點
-          
-          if (Math.random() < 0.016) {
-            console.log(`➡️ Drawing ${this.groupVelocityData.length} group velocity arrows`);
-          }
         } catch (error) {
           console.error('❌ Error drawing group velocity arrows:', error);
           this.enableGroupVelocityArrows = false; // 關閉以避免持續錯誤
