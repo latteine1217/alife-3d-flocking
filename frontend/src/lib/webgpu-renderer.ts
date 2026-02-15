@@ -1132,8 +1132,32 @@ export class WebGPURenderer {
     }
     
     this.device.queue.writeBuffer(this.trailBuffer, 0, data);
+
+    // 建立 primitive restart index buffer
+    // 每條軌跡：historyCount 個索引 + 1 個哨兵值 0xFFFFFFFF
+    const indexCount = this.particleCount * (historyCount + 1);
+    const indexData = new Uint32Array(indexCount);
+    for (let i = 0; i < this.particleCount; i++) {
+      const base = i * (historyCount + 1);
+      const vertexBase = i * historyCount;
+      for (let t = 0; t < historyCount; t++) {
+        indexData[base + t] = vertexBase + t;
+      }
+      indexData[base + historyCount] = 0xFFFFFFFF; // primitive restart sentinel
+    }
+
+    const indexBufferSize = indexData.byteLength;
+    if (!this.trailIndexBuffer || this.trailIndexBuffer.size !== indexBufferSize) {
+      if (this.trailIndexBuffer) this.trailIndexBuffer.destroy();
+      this.trailIndexBuffer = this.device.createBuffer({
+        label: 'Trail Index Buffer',
+        size: indexBufferSize,
+        usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      });
+    }
+    this.device.queue.writeBuffer(this.trailIndexBuffer, 0, indexData);
   }
-  
+
   /**
    * 構建速度向量 buffer（箭頭）
    */
