@@ -95,6 +95,10 @@ export class WebGPURenderer {
   
   // Group coloring
   private colorMode: 'type' | 'group' = 'type'; // NEW: Color mode toggle
+
+  // 預分配 CPU buffer，避免每幀 GC
+  private _typesU32: Uint32Array<ArrayBuffer> | null = null;
+  private _groupLabelsU32: Uint32Array<ArrayBuffer> | null = null;
   
   // Group boundary spheres
   private enableGroupBoundaries: boolean = false;
@@ -1465,41 +1469,45 @@ export class WebGPURenderer {
     this.device.queue.writeBuffer(this.positionBuffer, 0, positions.buffer);
     
     // 2. 創建或更新 type buffer (需要轉換為 uint32)
-    const typesU32 = new Uint32Array(N);
-    for (let i = 0; i < N; i++) {
-      typesU32[i] = types[i];
+    if (!this._typesU32 || this._typesU32.length !== N) {
+      this._typesU32 = new Uint32Array(N);
     }
-    
+    for (let i = 0; i < N; i++) {
+      this._typesU32[i] = types[i];
+    }
+
     if (!this.typeBuffer || this.particleCount !== N) {
       if (this.typeBuffer) {
         this.typeBuffer.destroy();
       }
       this.typeBuffer = this.device.createBuffer({
         label: 'Type Buffer',
-        size: typesU32.byteLength,
+        size: this._typesU32.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       });
     }
-    this.device.queue.writeBuffer(this.typeBuffer, 0, typesU32);
+    this.device.queue.writeBuffer(this.typeBuffer, 0, this._typesU32);
     
     // 3. 創建或更新 group label buffer (NEW)
     if (groupLabels) {
-      const groupLabelsU32 = new Uint32Array(N);
-      for (let i = 0; i < N; i++) {
-        groupLabelsU32[i] = groupLabels[i];
+      if (!this._groupLabelsU32 || this._groupLabelsU32.length !== N) {
+        this._groupLabelsU32 = new Uint32Array(N);
       }
-      
+      for (let i = 0; i < N; i++) {
+        this._groupLabelsU32[i] = groupLabels[i];
+      }
+
       if (!this.groupLabelBuffer || this.particleCount !== N) {
         if (this.groupLabelBuffer) {
           this.groupLabelBuffer.destroy();
         }
         this.groupLabelBuffer = this.device.createBuffer({
           label: 'Group Label Buffer',
-          size: groupLabelsU32.byteLength,
+          size: this._groupLabelsU32.byteLength,
           usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         });
       }
-      this.device.queue.writeBuffer(this.groupLabelBuffer, 0, groupLabelsU32);
+      this.device.queue.writeBuffer(this.groupLabelBuffer, 0, this._groupLabelsU32);
     }
     
     this.particleCount = N;
