@@ -112,6 +112,7 @@ export const AgentType = {
   FOLLOWER: 0,
   EXPLORER: 1,
   LEADER: 2,
+  PREDATOR: 3,
 } as const;
 
 export type AgentTypeValue = typeof AgentType[keyof typeof AgentType];
@@ -141,4 +142,44 @@ export const DEFAULT_PARAMS: SimulationParams = {
     enableGoals: false,
     goalPosition: [0, 0, 0],
   },
+  resources: [
+    {
+      position: [16.0, 14.0, 15.0],
+      amount: 280.0,
+      radius: 5.5,
+      renewable: true,
+      replenishRate: 90.0,
+      maxAmount: 420.0,
+    },
+    {
+      position: [-17.0, 15.0, -14.0],
+      amount: 260.0,
+      radius: 5.0,
+      renewable: true,
+      replenishRate: 85.0,
+      maxAmount: 380.0,
+    },
+    {
+      position: [14.0, -16.0, -13.0],
+      amount: 250.0,
+      radius: 4.8,
+      renewable: true,
+      replenishRate: 80.0,
+      maxAmount: 360.0,
+    },
+    {
+      position: [-15.0, -14.0, 16.0],
+      amount: 420.0,
+      radius: 5.4,
+      renewable: false,
+    },
+    {
+      position: [0.0, 0.0, -4.0],
+      amount: 220.0,
+      radius: 4.6,
+      renewable: true,
+      replenishRate: 70.0,
+      maxAmount: 320.0,
+    },
+  ],
 };
