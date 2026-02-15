@@ -43,3 +43,13 @@ def test_to_params_resource_defaults():
     assert r["renewable"] is True
     assert "replenishRate" in r
     assert "maxAmount" in r
+
+
+def test_to_params_ratio_sum_exceeds_one_raises():
+    raw = {
+        "simulation": {"N": 100},
+        "agents": {"explorerRatio": 0.5, "followerRatio": 0.6, "predatorRatio": 0.1},
+        "resources": [],
+    }
+    with pytest.raises(ValueError, match="must be <= 1.0"):
+        _to_params(raw)

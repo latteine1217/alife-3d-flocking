@@ -41,6 +41,20 @@ def _to_params(raw: dict) -> dict:
     agents = raw.get("agents", {})
     resources_raw = raw.get("resources", [])
 
+    # 驗證 agent ratio 總和不超過 1.0
+    total_ratio = (
+        agents.get("explorerRatio", 0.3)
+        + agents.get("followerRatio", 0.5)
+        + agents.get("predatorRatio", 0.05)
+    )
+    if total_ratio > 1.0:
+        raise ValueError(
+            f"Agent ratios sum to {total_ratio:.2f}, must be <= 1.0 "
+            f"(explorer={agents.get('explorerRatio', 0.3)}, "
+            f"follower={agents.get('followerRatio', 0.5)}, "
+            f"predator={agents.get('predatorRatio', 0.05)})"
+        )
+
     resources = []
     for r in resources_raw:
         res = {

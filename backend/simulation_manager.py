@@ -144,6 +144,8 @@ class SimulationManager:
                 + [AgentType.PREDATOR] * n_predator
             )
 
+            resources = params.get("resources", [])
+            max_resources = max(5, len(resources))
             self.system = HeterogeneousFlocking3D(
                 N=N,
                 params=flocking_params,
@@ -151,7 +153,7 @@ class SimulationManager:
                 enable_fov=agent_config.get("enableFov", True),
                 fov_angle=agent_config.get("fovAngle", 120.0),
                 max_obstacles=10,
-                max_resources=5,
+                max_resources=max_resources,
             )
 
             # 設定 goals
