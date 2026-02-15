@@ -17,7 +17,7 @@ from resources import create_resource, create_renewable_resource
 class SimulationManager:
     """模擬系統管理器"""
 
-    def __init__(self):
+    def __init__(self, initial_config: dict | None = None):
         # 初始化 Taichi（只執行一次）
         # Taichi 會自動選擇最佳可用架構
         ti.init(arch=ti.gpu)
@@ -49,33 +49,54 @@ class SimulationManager:
                 "fovAngle": 120.0,
             },
             "resources": [
-                # 可再生資源 #1（綠色 - 高產量，中等範圍）
+                # 資源 #1（3D corner cluster）
                 {
-                    "position": [15.0, 15.0, 0.0],
-                    "amount": 200.0,  # 100 → 200 (+100%)
-                    "radius": 4.0,  # 3.0 → 4.0 (+33%)
+                    "position": [16.0, 14.0, 15.0],
+                    "amount": 280.0,
+                    "radius": 5.5,
                     "renewable": True,
-                    "replenishRate": 10.0,  # 1.5 → 10.0 (6.7x)
-                    "maxAmount": 300.0,  # 150 → 300 (+100%)
+                    "replenishRate": 90.0,
+                    "maxAmount": 420.0,
                 },
-                # 消耗性資源（紅色 - 大型稀有資源）
+                # 資源 #2
                 {
-                    "position": [-15.0, -15.0, 0.0],
-                    "amount": 500.0,  # 100 → 500 (+400%)
-                    "radius": 5.0,  # 3.0 → 5.0 (+67%)
+                    "position": [-17.0, 15.0, -14.0],
+                    "amount": 260.0,
+                    "radius": 5.0,
+                    "renewable": True,
+                    "replenishRate": 85.0,
+                    "maxAmount": 380.0,
+                },
+                # 資源 #3
+                {
+                    "position": [14.0, -16.0, -13.0],
+                    "amount": 250.0,
+                    "radius": 4.8,
+                    "renewable": True,
+                    "replenishRate": 80.0,
+                    "maxAmount": 360.0,
+                },
+                # 資源 #4（一次性）
+                {
+                    "position": [-15.0, -14.0, 16.0],
+                    "amount": 420.0,
+                    "radius": 5.4,
                     "renewable": False,
                 },
-                # 可再生資源 #2（綠色 - 高補充率）
+                # 資源 #5（中心偏上，避免完全四角化）
                 {
-                    "position": [0.0, 20.0, 10.0],
-                    "amount": 200.0,  # 120 → 200 (+67%)
-                    "radius": 4.0,  # 3.5 → 4.0 (+14%)
+                    "position": [0.0, 0.0, -4.0],
+                    "amount": 220.0,
+                    "radius": 4.6,
                     "renewable": True,
-                    "replenishRate": 10.0,  # 1.5 → 10.0 (6.7x)
-                    "maxAmount": 300.0,  # 150 → 300 (+100%)
+                    "replenishRate": 70.0,
+                    "maxAmount": 320.0,
                 },
             ],
         }
+        # 若有外部設定檔，覆蓋 default_params
+        if initial_config is not None:
+            default_params = initial_config
         print("🚀 Creating default system on startup...")
         self.create_system(default_params)
 
@@ -169,7 +190,10 @@ class SimulationManager:
             self.system = Flocking3D(N=N, params=flocking_params)
 
         # 初始化
-        self.system.initialize(box_size=flocking_params.box_size, seed=42)
+        # 注意：initialize 的 box_size 參數是「初始散佈半徑」，不是邊界盒尺寸。
+        # 直接傳 flocking_params.box_size 會把粒子撒到邊界外（視覺上超出 box）。
+        # 這裡改用系統預設（box_size * 0.3）以確保初始位置在邊界內且密度合理。
+        self.system.initialize(seed=42)
         self.system.step_count = 0
         self.step_count = 0
         self.params = params

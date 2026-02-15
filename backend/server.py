@@ -17,10 +17,10 @@ from serializer import BinarySerializer
 class FlockingServer:
     """WebSocket 伺服器"""
 
-    def __init__(self, host: str = "localhost", port: int = 8765):
+    def __init__(self, host: str = "localhost", port: int = 8765, initial_config: dict | None = None):
         self.host = host
         self.port = port
-        self.manager = SimulationManager()
+        self.manager = SimulationManager(initial_config=initial_config)
         self.running = False
 
     async def handle_client(self, websocket: WebSocketServerProtocol):
@@ -113,5 +113,26 @@ class FlockingServer:
 
 
 if __name__ == "__main__":
-    server = FlockingServer()
+    import argparse
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
+
+    from config import load_config, list_configs
+
+    parser = argparse.ArgumentParser(description="ALife WebSocket Server")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help=f"實驗設定檔名稱（不含 .yaml）。可用: {list_configs()}",
+    )
+    args = parser.parse_args()
+
+    initial_config = None
+    if args.config:
+        initial_config = load_config(args.config)
+        print(f"[Server] 載入設定檔: {args.config}")
+
+    server = FlockingServer(initial_config=initial_config)
     asyncio.run(server.start())
