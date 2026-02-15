@@ -74,6 +74,7 @@ export class WebGPURenderer {
   private trailLength: number = 40; // History frames (~0.67 second at 60 FPS)
   private trailPipeline!: GPURenderPipeline;
   private trailBuffer!: GPUBuffer;
+  private trailIndexBuffer: GPUBuffer | null = null;
   private positionHistory: Float32Array[] = []; // Circular buffer
   private currentHistoryIndex: number = 0;
   
@@ -1669,6 +1670,7 @@ export class WebGPURenderer {
     if (this.depthTexture) this.depthTexture.destroy();
     if (this.boxBuffer) this.boxBuffer.destroy();
     if (this.trailBuffer) this.trailBuffer.destroy();
+    if (this.trailIndexBuffer) this.trailIndexBuffer.destroy();
     if (this.sphereVertexBuffer) this.sphereVertexBuffer.destroy();
     if (this.sphereIndexBuffer) this.sphereIndexBuffer.destroy();
     if (this.resourceInstanceBuffer) this.resourceInstanceBuffer.destroy();
