@@ -26,7 +26,8 @@ export function GroupStatistics() {
   
   // 使用 useMemo 來避免不必要的重新計算
   const validGroups = useMemo(() => {
-    return groups.filter(g => g.size >= 3);
+    // 顯示所有有效群組（包含 size=1/2），避免 UI 看起來像完全沒有群組資料
+    return groups.filter(g => g.size > 0);
   }, [groups]);
   
   // 按大小排序（使用 useMemo 避免每次 render 都排序）

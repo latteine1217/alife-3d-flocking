@@ -53,7 +53,9 @@ class SpatialGridMixin:
             max_agents_per_cell: 每個 cell 最多容納的 agent 數量
         """
         self.grid_cell_size = cell_size
-        self.grid_resolution = max(int(box_size / cell_size) + 1, 4)  # 至少 4×4×4
+        # 使用 ceil(box/cell) 以避免「剛好整除時多出一層空 cell」
+        # 這對 PBC 很重要：多出空層會讓跨邊界的鄰居落在非相鄰 cell。
+        self.grid_resolution = max(int(np.ceil(box_size / cell_size)), 4)
         self.max_agents_per_cell = max_agents_per_cell
 
         # Grid 資料結構
@@ -191,7 +193,7 @@ class SpatialGridMixin:
             這會觸發重新分配記憶體，成本較高，建議在初始化時設定正確的值
         """
         self.grid_cell_size = new_cell_size
-        new_resolution = max(int(self.params.box_size / new_cell_size) + 1, 4)
+        new_resolution = max(int(np.ceil(self.params.box_size / new_cell_size)), 4)
 
         if new_resolution != self.grid_resolution:
             print(

@@ -48,3 +48,9 @@ data/output/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime logs
+*.log
+logs/
+backend/logs/
+nohup.out

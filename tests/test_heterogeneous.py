@@ -89,8 +89,8 @@ def test_custom_profiles():
     )
 
     # 驗證使用了自訂 profile
-    assert np.allclose(system.beta_individual.to_numpy(), 2.0)
-    assert np.allclose(system.v0_individual.to_numpy(), 1.5)
+    assert np.allclose(system.beta_individual.to_numpy()[:N], 2.0)
+    assert np.allclose(system.v0_individual.to_numpy()[:N], 1.5)
 
     print("✓ Custom profiles work correctly")
 
@@ -166,6 +166,7 @@ def test_goal_seeking_moves_toward_target():
     params = FlockingParams(beta=0.0, alpha=0.0, box_size=50.0)  # 移除其他力
     system = HeterogeneousFlocking3D(N=N, params=params, agent_types=agent_types)
     system.initialize(box_size=5.0, seed=42)
+    system.enable_ecology = False  # 避免能量/死亡機制干擾純導航測試
 
     # 設定目標在附近（在 PBC 下不會被 wrap）
     # 初始化在 ±2.5 附近，目標設在 10.0 處
@@ -323,11 +324,12 @@ def test_homogeneous_fallback():
     params = FlockingParams(beta=1.0, eta=0.1, box_size=30.0)
     system = HeterogeneousFlocking3D(N=N, params=params, agent_types=agent_types)
     system.initialize(seed=42)
+    system.enable_ecology = False  # 避免能量/死亡機制干擾純物理穩定性測試
 
     # 驗證：所有個體參數相同
-    beta_arr = system.beta_individual.to_numpy()
-    eta_arr = system.eta_individual.to_numpy()
-    v0_arr = system.v0_individual.to_numpy()
+    beta_arr = system.beta_individual.to_numpy()[:N]
+    eta_arr = system.eta_individual.to_numpy()[:N]
+    v0_arr = system.v0_individual.to_numpy()[:N]
 
     assert np.allclose(beta_arr, beta_arr[0])
     assert np.allclose(eta_arr, eta_arr[0])
@@ -357,6 +359,7 @@ def test_mixed_population_stability():
     params = FlockingParams(box_size=50.0)
     system = HeterogeneousFlocking3D(N=N, params=params, agent_types=agent_types)
     system.initialize(box_size=5.0, seed=42)
+    system.enable_ecology = False
 
     # 運行長時間
     for _ in range(200):
@@ -393,6 +396,7 @@ def test_leader_guides_followers():
         N=N, params=params, agent_types=agent_types, type_profiles=custom_profiles
     )
     system.initialize(box_size=3.0, seed=42)
+    system.enable_ecology = False
 
     # Leaders 有明確目標（設在附近，避免 PBC wrap）
     leader_indices = np.where(np.array(agent_types) == AgentType.LEADER)[0]
@@ -403,7 +407,7 @@ def test_leader_guides_followers():
     for _ in range(300):
         system.step(dt=0.01)
 
-    x_final = system.x.to_numpy()
+    x_final = system.x.to_numpy()[:N]
 
     # 計算群體質心
     com = np.mean(x_final, axis=0)

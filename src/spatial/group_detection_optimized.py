@@ -17,7 +17,7 @@ from typing import Optional, List
 
 
 @ti.data_oriented
-class GroupDetectionMixin:
+class GroupDetectionMixinOptimized:
     """
     群組檢測 Mixin（優化版）
 
@@ -85,7 +85,6 @@ class GroupDetectionMixin:
             cos_theta_cluster: 速度夾角的 cos 值（避免 acos 計算）
         """
         for i in self.x:
-            boundary_mode = ti.cast(self.p[12], ti.i32)
             vi_norm = self.v_norm_cache[i]
 
             if vi_norm < 1e-6:
@@ -118,17 +117,15 @@ class GroupDetectionMixin:
                 ny = iy + dy
                 nz = iz + dz
 
-                # 邊界處理：PBC wrap-around（避免跨邊界群組被切成兩個 cell 區塊）
-                valid = True
-                if boundary_mode == 0:
-                    nx = (nx + res) % res
-                    ny = (ny + res) % res
-                    nz = (nz + res) % res
-                else:
-                    if nx < 0 or nx >= res or ny < 0 or ny >= res or nz < 0 or nz >= res:
-                        valid = False
-
-                if valid:
+                # 邊界檢查
+                if (
+                    nx >= 0
+                    and nx < res
+                    and ny >= 0
+                    and ny < res
+                    and nz >= 0
+                    and nz < res
+                ):
                     neighbor_cell = nx + ny * res + nz * res * res
                     n_agents_in_cell = self.cell_count[neighbor_cell]
 
@@ -220,7 +217,6 @@ class GroupDetectionMixin:
         change_count = 0
 
         for i in self.x:
-            boundary_mode = ti.cast(self.p[12], ti.i32)
             current_group = self.group_id[i]
             vi_norm = self.v_norm_cache[i]
 
@@ -260,16 +256,14 @@ class GroupDetectionMixin:
                 ny = iy + dy
                 nz = iz + dz
 
-                valid = True
-                if boundary_mode == 0:
-                    nx = (nx + res) % res
-                    ny = (ny + res) % res
-                    nz = (nz + res) % res
-                else:
-                    if nx < 0 or nx >= res or ny < 0 or ny >= res or nz < 0 or nz >= res:
-                        valid = False
-
-                if valid:
+                if (
+                    nx >= 0
+                    and nx < res
+                    and ny >= 0
+                    and ny < res
+                    and nz >= 0
+                    and nz < res
+                ):
                     neighbor_cell = nx + ny * res + nz * res * res
                     n_agents = ti.min(self.cell_count[neighbor_cell], 4)
 
@@ -297,6 +291,7 @@ class GroupDetectionMixin:
             • 預先計算速度 norm
             • 使用 cos(theta) 避免 acos
             • 降低迭代次數：5 → 2
+            • Early termination（收斂後提前終止）
 
         Args:
             r_cluster: 聚類距離閾值
@@ -308,7 +303,9 @@ class GroupDetectionMixin:
 
         # 動態更新 grid_cell_size（確保 cell_size = r_cluster）
         self.grid_cell_size = r_cluster
-        self.grid_resolution = max(int(np.ceil(self.params.box_size / r_cluster)), 4)
+        self.grid_resolution = max(
+            int(self.params.box_size / r_cluster) + 1, 4
+        )  # 最小 4×4×4
 
         # Step 1: 將 agents 分配到 spatial grid（O(N)）
         self.assign_agents_to_grid()
@@ -316,28 +313,29 @@ class GroupDetectionMixin:
         # Step 2: 預先計算速度 norm
         self.precompute_velocity_norms()
 
-        # Step 3: 初始化：每個「存活且可參與」的 agent 自己是一個群組
-        # Why:
-        #   系統可能使用 pre-allocated pool（max_agents > 初始 N），
-        #   不能把未啟用 slot 也初始化成獨立群組，否則群組數量會被稀釋。
+        # Step 3: 初始化：每個 agent 自己是一個群組
         self.group_id.fill(-1)
+        N = len(self.x.to_numpy())
+        for i in range(N):
+            # 掠食者不參與群組（需要檢查 agent_types_np 是否存在）
+            if hasattr(self, "agent_types_np") and self.agent_types_np[i] != 3:
+                self.group_id[i] = i
+            elif not hasattr(self, "agent_types_np"):
+                # 沒有類型系統，所有 agent 參與
+                self.group_id[i] = i
 
-        n_agents = self.group_id.shape[0]
-        alive_np = None
-        if hasattr(self, "agent_alive"):
-            alive_np = self.agent_alive.to_numpy()
-
-        for i in range(n_agents):
-            if alive_np is not None and alive_np[i] == 0:
-                continue
-            # 掠食者不參與群組（若有類型系統）
-            if hasattr(self, "agent_types_np") and self.agent_types_np[i] == 3:
-                continue
-            self.group_id[i] = i
-
-        # Step 4: 執行迭代（移除 early termination 簡化邏輯）
+        # Step 4: 執行迭代（with early termination）
         for iteration in range(n_iterations):
             self.detect_groups_iteration_optimized(r_cluster, cos_theta)
+
+            # Early termination: 檢查是否收斂
+            if iteration > 0:  # 第一輪之後才檢查
+                change_count = self.check_convergence()
+                if change_count == 0:
+                    print(
+                        f"[GroupDetection] Converged after {iteration + 1} iterations"
+                    )
+                    break
 
         # Step 5: 計算群組統計
         self.compute_group_statistics()
@@ -375,19 +373,5 @@ class GroupDetectionMixin:
         return groups
 
     def get_agent_groups(self) -> np.ndarray:
-        """
-        獲取每個 agent 的群組 ID（返回 numpy 陣列）
-
-        向後相容：
-            在 pre-allocated pool 系統中，group_id 的容量可能是 max_agents，
-            但多數使用者只期待拿到「前 N 個活躍 agents」的結果。
-        """
-        gid = self.group_id.to_numpy()
-        if hasattr(self, "N"):
-            try:
-                n = int(self.N)
-                if 0 < n <= gid.shape[0]:
-                    return gid[:n]
-            except Exception:
-                pass
-        return gid
+        """獲取每個 agent 的群組 ID（返回 numpy 陣列）"""
+        return self.group_id.to_numpy()

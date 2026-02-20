@@ -415,13 +415,20 @@ def test_predation_dynamic_reward():
 
     predator_initial_energy = system.agent_energy[0]
 
-    # 執行捕食
-    system.find_nearest_prey()
-    system.attack_prey_step()
+    # 執行捕食（有隨機性，允許多次嘗試）
+    prey_caught = False
+    for _ in range(50):
+        # find_nearest_prey() 依賴 Spatial Grid，因此需先更新 Grid
+        system.assign_agents_to_grid()
+        system.find_nearest_prey()
+        system.attack_prey_step()
+        if int(system.agent_alive[2]) == 0:
+            prey_caught = True
+            break
 
     # 檢查：
     # 1. 獵物死亡
-    assert system.agent_alive[2] == 0
+    assert prey_caught, "掠食在 50 次嘗試內未成功（隨機性過高或目標鎖定異常）"
 
     # 2. 掠食者獲得能量（應該是獵物能量的 70%）
     expected_gain = prey_energy * 0.7

@@ -100,7 +100,7 @@ class HeterogeneousFlocking3D(
         max_groups: int = 32,
         max_resources: int = 32,
         max_agents: int = 200,  # 繁殖系統預分配池大小
-        enable_reproduction: bool = True,
+        enable_reproduction: bool = False,
     ):
         """
         初始化異質性系統
@@ -118,6 +118,12 @@ class HeterogeneousFlocking3D(
             max_agents: 系統最大 agent 容量（預分配池，用於繁殖）
             enable_reproduction: 是否啟用繁殖系統
         """
+        if N > max_agents:
+            raise ValueError(
+                f"N ({N}) 超過 max_agents ({max_agents})。"
+                f"繁殖系統使用預分配池，請將 max_agents 設為 >= N。"
+            )
+
         # 先初始化父類別（使用 max_agents 作為容量）
         super().__init__(max_agents, params)
 
@@ -147,6 +153,7 @@ class HeterogeneousFlocking3D(
         self.eta_individual = ti.field(ti.f32, max_agents)
         self.v0_individual = ti.field(ti.f32, max_agents)
         self.v0_base = ti.field(ti.f32, max_agents)  # 基礎速度（不受健康狀態影響）
+        self.mass_base = ti.field(ti.f32, max_agents)  # 基礎質量（不受能量耦合影響）
         self.mass_individual = ti.field(ti.f32, max_agents)
         self.agent_type_field = ti.field(ti.i32, max_agents)  # 重命名避免衝突
 
@@ -159,14 +166,14 @@ class HeterogeneousFlocking3D(
         # ===== Spatial Grid & Group Detection =====
         # 初始化空間網格（使用 SpatialGridMixin）
         self.init_spatial_grid(
-            N=N,
+            N=max_agents,
             box_size=params.box_size,
             cell_size=5.0,  # 預設值，與 r_cluster 一致
             max_agents_per_cell=32,
         )
 
         # 初始化群組檢測系統（使用 GroupDetectionMixin）
-        self.init_group_detection(N=N, max_groups=max_groups)
+        self.init_group_detection(N=max_agents, max_groups=max_groups)
 
         # 群組檢測頻率控制
         self.group_detection_interval = 5  # 每 5 步檢測一次
@@ -178,7 +185,7 @@ class HeterogeneousFlocking3D(
             N=max_agents,
             resources=ResourceSystem(max_resources=max_resources),
             energy_threshold=30.0,
-            energy_consumption_rate=0.2,  # 0.1 → 0.2 (基礎消耗提高 2 倍)
+            energy_consumption_rate=0.2,
             initial_energy=100.0,
         )
 
@@ -198,6 +205,10 @@ class HeterogeneousFlocking3D(
             self.enable_reproduction = True
         else:
             self.enable_reproduction = False
+
+        # 生態互動總開關（向後相容：預設開啟）
+        # 測試或純物理情境可關閉，以避免能量/死亡/捕食干擾。
+        self.enable_ecology = True
 
         # 初始化 agent 類型與參數
         if agent_types is None:
@@ -249,6 +260,7 @@ class HeterogeneousFlocking3D(
         self.eta_individual.from_numpy(eta_arr)
         self.v0_individual.from_numpy(v0_arr)
         self.v0_base.from_numpy(v0_arr.copy())  # 保存基礎速度
+        self.mass_base.from_numpy(mass_arr.copy())  # 保存基礎質量
         self.mass_individual.from_numpy(mass_arr)
         self.goal_strength.from_numpy(goal_strength_arr)
         self.predator_hunt_range.from_numpy(hunt_range_arr)
@@ -394,7 +406,7 @@ class HeterogeneousFlocking3D(
 
                     if dist > 1e-6:
                         # 施加吸引力（類似 goal force）
-                        foraging_strength = 3.0  # 可調整
+                        foraging_strength = 10.0  # 3.0 → 10.0（增強吸引力）
                         self.f[i] += foraging_strength * (direction / dist)
 
             # Predator hunting force (掠食者追捕)
@@ -440,6 +452,168 @@ class HeterogeneousFlocking3D(
                             escape_force -= escape_strength * (dx / dist)
 
                 self.f[i] += escape_force
+
+            # Obstacle avoidance force
+            for obs_id in range(self.obstacles.n_obstacles):
+                self.f[i] += self.obstacles.compute_obstacle_force(xi, obs_id)
+
+    @ti.kernel
+    def compute_forces_grid(self):
+        """
+        優化版 compute_forces - 使用 Spatial Grid 加速鄰居搜尋
+        時間複雜度：O(N²) → O(N × k), k ≈ 27 cells
+
+        優化改進：
+            • 單一鄰居迴圈處理 Morse + Alignment + Prey escape
+            • 消除重複的 Grid 解析與 pbc_dist 計算
+            • max_check 提升至 12（改善正確性）
+            • 預期加速：1.8-2.0x
+        """
+        # 清空
+        for i in self.f:
+            self.f[i] = ti.Vector([0.0, 0.0, 0.0])
+
+        # 讀取參數
+        Ca, Cr = self.p[0], self.p[1]
+        la, lr = self.p[2], self.p[3]
+        rc = self.p[4]
+
+        inv_la, inv_lr = 1.0 / la, 1.0 / lr
+        rc2 = rc * rc
+        escape_range = 15.0
+        escape_range2 = escape_range * escape_range
+
+        # 主循環
+        for i in self.x:
+            # 只處理存活的 agents
+            if self.agent_alive[i] == 0:
+                continue
+
+            xi, vi = self.x[i], self.v[i]
+            force = ti.Vector([0.0, 0.0, 0.0])
+            v_sum = ti.Vector([0.0, 0.0, 0.0])
+            n_neighbors = 0
+            escape_force = ti.Vector([0.0, 0.0, 0.0])
+
+            # 個體參數
+            beta_i = self.beta_individual[i]
+            agent_type_i = self.agent_type_field[i]
+            is_prey = agent_type_i != 3  # 非掠食者需要逃跑
+
+            # ====== 統一的 Grid 解析（只執行一次）======
+            cell_id = self.agent_cell_id[i]
+            if cell_id >= 0:
+                # 解析 cell_id 為 3D index
+                res = self.grid_resolution
+                iz = cell_id // (res * res)
+                remainder = cell_id % (res * res)
+                iy = remainder // res
+                ix = remainder % res
+
+                # ====== 單一鄰居迴圈處理所有鄰居相關計算 ======
+                # 只檢查 3×3×3=27 個鄰近 cell（取代 O(N) 全局搜尋）
+                for cell_offset in ti.static(range(27)):
+                    # 解碼 cell_offset 為 3D 偏移量
+                    dz = (cell_offset // 9) - 1
+                    dy = ((cell_offset % 9) // 3) - 1
+                    dx = (cell_offset % 3) - 1
+
+                    nx = ix + dx
+                    ny = iy + dy
+                    nz = iz + dz
+
+                    # 邊界檢查
+                    if 0 <= nx < res and 0 <= ny < res and 0 <= nz < res:
+                        neighbor_cell = nx + ny * res + nz * res * res
+
+                        # 提高檢查上限至 12（改善正確性）
+                        n_agents_in_cell = self.cell_count[neighbor_cell]
+                        max_check = ti.min(n_agents_in_cell, 12)
+
+                        for local_idx in range(max_check):
+                            j = self.cell_agents[neighbor_cell, local_idx]
+                            if i == j or self.agent_alive[j] == 0:
+                                continue
+
+                            # 共用的距離計算
+                            rij = self.pbc_dist(xi, self.x[j])
+                            r2 = rij.dot(rij)
+
+                            # === Morse + Alignment (對所有鄰居) ===
+                            if r2 > 1e-6 and r2 < rc2:
+                                r = ti.sqrt(r2)
+                                inv_r = 1.0 / r
+
+                                # Morse force（無 FOV 限制）
+                                exp_a = ti.exp(-r * inv_la)
+                                exp_r_val = ti.exp(-r * inv_lr)
+                                coeff = Ca * inv_la * exp_a - Cr * inv_lr * exp_r_val
+                                force += coeff * rij * inv_r
+
+                                # Alignment force（受 FOV 限制）
+                                if beta_i > 0.0:
+                                    if self.is_in_fov(vi, rij):
+                                        v_sum += self.v[j]
+                                        n_neighbors += 1
+
+                            # === Prey escape (只對掠食者) ===
+                            if is_prey and self.agent_type_field[j] == 3:
+                                if r2 < escape_range2 and r2 > 1e-6:
+                                    dist = ti.sqrt(r2)
+                                    # 逃跑力與距離成反比（越近越強）
+                                    escape_strength = 8.0 / (dist + 1.0)
+                                    escape_force -= escape_strength * (rij / dist)
+
+            # ====== 組裝最終的力 ======
+            # Morse + Alignment
+            self.f[i] = force
+            if beta_i > 0.0 and n_neighbors > 0:
+                v_avg = v_sum / ti.cast(n_neighbors, ti.f32)
+                self.f[i] += beta_i * (v_avg - vi)
+
+            # Prey escape
+            self.f[i] += escape_force
+
+            # Goal seeking force
+            self.f[i] += self.goal_seeking_force(i)
+
+            # Resource-seeking force
+            target_res = self.agent_target_resource[i]
+            if target_res >= 0:
+                if self.resources.resource_active[target_res] == 1:
+                    res_pos = self.resources.resource_pos[target_res]
+
+                    # 計算方向（考慮 PBC）
+                    direction = ti.Vector([0.0, 0.0, 0.0])
+                    if self.params.boundary_mode == 0:  # PBC
+                        direction = self.pbc_dist(xi, res_pos)
+                    else:
+                        direction = res_pos - xi
+
+                    dist = direction.norm()
+
+                    if dist > 1e-6:
+                        # 施加吸引力（類似 goal force）
+                        foraging_strength = 10.0  # 3.0 → 10.0（增強吸引力）
+                        self.f[i] += foraging_strength * (direction / dist)
+
+            # Predator hunting force (掠食者追捕)
+            if agent_type_i == 3:  # PREDATOR
+                target_prey = self.agent_target_prey[i]
+                if target_prey >= 0 and self.agent_alive[target_prey] == 1:
+                    # 計算方向（考慮 PBC）
+                    direction = ti.Vector([0.0, 0.0, 0.0])
+                    if self.params.boundary_mode == 0:  # PBC
+                        direction = self.pbc_dist(xi, self.x[target_prey])
+                    else:
+                        direction = self.x[target_prey] - xi
+
+                    dist = direction.norm()
+
+                    if dist > 1e-6:
+                        # 強力追捕（比覓食更強）
+                        hunt_strength = 5.0
+                        self.f[i] += hunt_strength * (direction / dist)
 
             # Obstacle avoidance force
             for obs_id in range(self.obstacles.n_obstacles):
@@ -594,21 +768,17 @@ class HeterogeneousFlocking3D(
         將所有 agent 分配到對應的 spatial grid cell
         時間複雜度：O(N)
 
-        Override: 排除掠食者（type=3）不參與 Grid
+        Note: 包含所有 agents（含掠食者）以支援 compute_forces_grid
+              群組檢測時會自行過濾掠食者
         """
         # 重置 cell_count
         for c in self.cell_count:
             self.cell_count[c] = 0
 
-        # 分配 agents 到 Grid（排除掠食者）
+        # 分配所有存活的 agents 到 Grid（包含掠食者）
         for i in self.x:
             # 只處理存活的 agents
             if self.agent_alive[i] == 0:
-                self.agent_cell_id[i] = -1
-                continue
-
-            # 排除掠食者
-            if self.agent_type_field[i] == 3:
                 self.agent_cell_id[i] = -1
                 continue
 
@@ -743,6 +913,8 @@ class HeterogeneousFlocking3D(
 
         # 計算群組總和（排除掠食者）
         for i in self.x:
+            if self.agent_alive[i] == 0:
+                continue
             if self.agent_type_field[i] == 3:
                 continue
 
@@ -767,45 +939,58 @@ class HeterogeneousFlocking3D(
         執行一個時間步（覆寫父類別方法以整合異質與捕食者邏輯）
 
         整合順序：
-            1. 更新資源與獵物目標
-            2. 計算力（包含捕食/逃脫力）
-            3. Verlet 積分器
-            4. 資源消耗與捕食攻擊
-            5. 資源再生
-            6. 群組檢測（每 N 步執行一次）
+            1. 更新 Spatial Grid（用於 compute_forces 加速）
+            2. 更新資源與獵物目標
+            3. 計算力（包含捕食/逃脫力）
+            4. Verlet 積分器
+            5. 資源消耗與捕食攻擊
+            6. 資源再生
+            7. 群組檢測（每 N 步執行一次）
         """
-        # 1. 更新目標
-        self.find_nearest_resources()  # 低能量 agent 尋找資源
-        self.find_nearest_prey()  # 捕食者鎖定獵物
+        # 1. 更新 Spatial Grid（每步更新以支援 compute_forces_grid）
+        self.assign_agents_to_grid()
 
-        # 2-3. 物理更新（Velocity Verlet）
-        self.compute_forces()  # 計算所有力（含捕食/逃脫）
+        # 2. 更新目標（生態互動）
+        if self.enable_ecology:
+            self.find_nearest_resources()  # 低能量 agent 尋找資源
+            self.find_nearest_prey()  # 捕食者鎖定獵物
+
+        # 3-4. 物理更新（Velocity Verlet）
+        # 使用 Grid 優化版本（1.8x speedup，避免 O(N²) 全局搜尋）
+        self.compute_forces_grid()  # 計算所有力（含捕食/逃脫）
         self.verlet_step1(dt)
-        self.compute_forces()
+        self.compute_forces_grid()
         self.verlet_step2(dt)
 
         # 4. 生態互動
-        # 4.1 資源消耗（含速度相關能量消耗與資源競爭）
-        self.consume_resources_step(
-            consumption_rate=3.0,  # 降低消耗速率（10.0 → 3.0）
-            velocity_factor=0.5,  # 速度影響能量消耗
-            conversion_efficiency=0.5,  # 資源轉能量效率 50%
-        )
+        if self.enable_ecology:
+            # 4.1 資源消耗（含速度相關能量消耗與資源競爭）
+            self.consume_resources_step(
+                consumption_rate=3.0,
+                velocity_factor=0.2,
+                conversion_efficiency=0.8,
+                travel_relief_factor=0.45,
+                travel_relief_steps=120.0,
+            )
 
-        # 4.2 能量耗盡死亡檢查
-        self.apply_energy_death()
+            # 4.2 能量耗盡死亡檢查
+            self.apply_energy_death()
 
-        # 4.3 捕食者攻擊獵物（動態獎勵：獵物能量 × 70%）
-        self.attack_prey_step()
+            # 4.3 捕食者攻擊獵物（動態獎勵：獵物能量 × 70%）
+            self.attack_prey_step()
 
-        # 5. 環境更新
-        self.resources.replenish_resources()  # 資源再生
+            # 4.4 繁殖（只在啟用時執行）
+            if getattr(self, "enable_reproduction", False):
+                self.attempt_reproduction()
+
+            # 5. 環境更新
+            self.resources.replenish_resources()  # 資源再生
 
         # 6. 群組檢測（每 N 步執行一次以減少計算負擔）
         # 第一步（step_counter=0）強制執行一次，確保有初始群組資料
         # 降低迭代次數：5 → 3（Label Propagation 收斂很快）
         if self.step_counter == 0 or self.step_counter >= self.group_detection_interval:
-            self.update_groups(r_cluster=5.0, theta_cluster=30.0, n_iterations=3)
+            self.update_groups(r_cluster=12.0, theta_cluster=45.0, n_iterations=3)
             self.step_counter = 1  # 重置為 1（下次在 interval 時執行）
         else:
             self.step_counter += 1
@@ -820,6 +1005,46 @@ class HeterogeneousFlocking3D(
     def get_agent_energies(self) -> np.ndarray:
         """獲取所有 agents 的能量"""
         return self.agent_energy.to_numpy()
+
+    def _compute_attack_success_rate(
+        self, predator_idx: int, prey_idx: int, v_np: np.ndarray
+    ) -> float:
+        """
+        計算單次攻擊成功率（Python helper，供測試/診斷使用）
+
+        Why:
+            攻擊成功率的核心邏輯實作在 Taichi kernel 中不易直接單測。
+            這個 helper 提供一個可驗證、可輸出的對照版本。
+        """
+        # 與 PredationBehaviorMixin.attack_prey_step() 預設參數保持一致
+        base_rate = 0.3
+        speed_weight = 0.25
+        weakness_weight = 0.25
+
+        energy_max = float(getattr(self, "energy_max", 100.0))
+        energy_max = max(energy_max, 1e-6)
+
+        v_predator = float(np.linalg.norm(v_np[predator_idx]))
+        v_prey = float(np.linalg.norm(v_np[prey_idx]))
+        speed_advantage = 0.0
+        if v_predator > 1e-6:
+            speed_advantage = max(0.0, (v_predator - v_prey) / v_predator)
+
+        prey_energy = float(self.agent_energy[prey_idx])
+        prey_weakness = 1.0 - (prey_energy / energy_max)
+
+        predator_energy = float(self.agent_energy[predator_idx])
+        predator_stamina = predator_energy / energy_max
+
+        group_defense = 1.0
+        if hasattr(self, "agent_group_defense_multiplier"):
+            group_defense = float(self.agent_group_defense_multiplier[prey_idx])
+
+        success_rate = base_rate + speed_weight * speed_advantage + weakness_weight * prey_weakness
+        success_rate *= predator_stamina
+        success_rate *= group_defense
+        success_rate = max(0.05, min(0.95, success_rate))
+        return float(success_rate)
 
 
 # ============================================================================

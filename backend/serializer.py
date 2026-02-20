@@ -43,56 +43,85 @@ class BinarySerializer:
 
         # 檢查是否有資源系統
         has_resources = False
+        active_resource_indices = []
         if hasattr(system, "resources") and hasattr(system.resources, "n_resources"):
-            has_resources = system.resources.n_resources > 0
+            active_np = system.resources.resource_active.to_numpy()
+            n_res = system.resources.n_resources
+            active_resource_indices = [i for i in range(n_res) if active_np[i] == 1]
+            has_resources = len(active_resource_indices) > 0
 
         has_obstacles = False  # 目前不支援障礙物序列化
 
-        buffer.extend(struct.pack("I", N))  # uint32
+        # 🔧 FIX: 過濾死亡的 agents
+        # 只序列化 agent_alive == 1 的 agents
+        if hasattr(system, "agent_alive"):
+            alive_mask_full = system.agent_alive.to_numpy()
+            # 只取前 N 個（避免維度不匹配）
+            alive_mask = (alive_mask_full[:N] == 1)
+            N_alive = np.sum(alive_mask)
+        else:
+            alive_mask = np.ones(N, dtype=bool)
+            N_alive = N
+
+        buffer.extend(struct.pack("I", N_alive))  # uint32（實際存活數）
         buffer.extend(struct.pack("I", step))  # uint32
         buffer.extend(struct.pack("B", int(has_resources)))  # uint8
         buffer.extend(struct.pack("B", int(has_obstacles)))  # uint8
         buffer.extend(b"\x00" * 10)  # reserved
 
         # === Agent Data ===
-        # Positions (N * 3 * 4 bytes)
-        x_np = system.x.to_numpy().astype(np.float32)
-        buffer.extend(x_np.tobytes())
+        # Positions (N_alive * 3 * 4 bytes)
+        # system.x 是 Vector.field(3, ti.f32, max_agents)
+        # to_numpy() 返回 shape=(max_agents, 3) 的數組
+        x_np_full = system.x.to_numpy().astype(np.float32)  # shape=(max_agents, 3)
+        x_np = x_np_full[:N]  # 只取前 N 個 agents，shape=(N, 3)
+        x_alive = x_np[alive_mask]  # shape=(N_alive, 3)
+        buffer.extend(x_alive.flatten().tobytes())
 
-        # Velocities (N * 3 * 4 bytes)
-        v_np = system.v.to_numpy().astype(np.float32)
-        buffer.extend(v_np.tobytes())
+        # Velocities (N_alive * 3 * 4 bytes)
+        v_np_full = system.v.to_numpy().astype(np.float32)  # shape=(max_agents, 3)
+        v_np = v_np_full[:N]  # shape=(N, 3)
+        v_alive = v_np[alive_mask]  # shape=(N_alive, 3)
+        buffer.extend(v_alive.flatten().tobytes())
 
-        # Types (N * 1 bytes + padding)
+        # Types (N_alive * 1 bytes + padding)
         if hasattr(system, "agent_types_np"):
-            types = system.agent_types_np.astype(np.uint8)
+            types_full = system.agent_types_np.astype(np.uint8)
+            types = types_full[:N][alive_mask]
         else:
-            types = np.zeros(N, dtype=np.uint8)
+            types = np.zeros(N_alive, dtype=np.uint8)
         buffer.extend(types.tobytes())
 
         # Padding to 4-byte alignment
-        padding = (4 - (N % 4)) % 4
+        padding = (4 - (N_alive % 4)) % 4
         buffer.extend(b"\x00" * padding)
 
-        # Energies (N * 4 bytes)
-        if hasattr(system, "energy"):
-            energy_np = system.energy.to_numpy().astype(np.float32)
+        # Energies (N_alive * 4 bytes)
+        # 優先使用異質系統的 agent_energy，向後相容舊欄位 energy
+        if hasattr(system, "agent_energy"):
+            energy_full = system.agent_energy.to_numpy().astype(np.float32)
+            energy_np = energy_full[:N][alive_mask]
+        elif hasattr(system, "energy"):
+            energy_full = system.energy.to_numpy().astype(np.float32)
+            energy_np = energy_full[:N][alive_mask]
         else:
-            energy_np = np.zeros(N, dtype=np.float32)
+            energy_np = np.zeros(N_alive, dtype=np.float32)
         buffer.extend(energy_np.tobytes())
 
-        # Targets (N * 4 bytes)
+        # Targets (N_alive * 4 bytes)
         if hasattr(system, "target_resource"):
-            target_np = system.target_resource.to_numpy().astype(np.int32)
+            target_full = system.target_resource.to_numpy().astype(np.int32)
+            target_np = target_full[:N][alive_mask]
         else:
-            target_np = np.full(N, -1, dtype=np.int32)
+            target_np = np.full(N_alive, -1, dtype=np.int32)
         buffer.extend(target_np.tobytes())
 
-        # Group Labels (N * 4 bytes) - NEW
+        # Group Labels (N_alive * 4 bytes) - NEW
         if hasattr(system, "group_id"):
-            group_labels_np = system.group_id.to_numpy().astype(np.int32)
+            group_labels_full = system.group_id.to_numpy().astype(np.int32)
+            group_labels_np = group_labels_full[:N][alive_mask]
         else:
-            group_labels_np = np.full(N, -1, dtype=np.int32)
+            group_labels_np = np.full(N_alive, -1, dtype=np.int32)
         buffer.extend(group_labels_np.tobytes())
 
         # === Statistics (64 bytes) ===
@@ -121,27 +150,32 @@ class BinarySerializer:
         # === Resources (optional) ===
         if has_resources:
             res_system = system.resources
-            n_res = res_system.n_resources
-            buffer.extend(struct.pack("I", n_res))
+            # 只寫入活躍資源數量，確保前後端解析偏移一致
+            buffer.extend(struct.pack("I", len(active_resource_indices)))
 
             # 讀取資源資料
             pos_np = res_system.resource_pos.to_numpy()
             amount_np = res_system.resource_amount.to_numpy()
             radius_np = res_system.resource_radius.to_numpy()
             replenish_np = res_system.resource_replenish_rate.to_numpy()
-            active_np = res_system.resource_active.to_numpy()
+            max_amount_np = res_system.resource_max_amount.to_numpy()
 
-            for i in range(n_res):
-                if active_np[i] == 1:  # 只序列化活躍的資源
-                    pos = pos_np[i]
-                    buffer.extend(struct.pack("fff", pos[0], pos[1], pos[2]))
-                    buffer.extend(struct.pack("f", amount_np[i]))
-                    buffer.extend(struct.pack("f", radius_np[i]))
+            for i in active_resource_indices:
+                pos = pos_np[i]
+                buffer.extend(struct.pack("fff", pos[0], pos[1], pos[2]))
 
-                    # is_renewable (uint8)
-                    is_renewable = int(replenish_np[i] > 0)
-                    buffer.extend(struct.pack("B", is_renewable))
-                    buffer.extend(b"\x00" * 3)  # padding
+                # amount 轉為標準化值（0-1）給前端著色
+                max_amt = max_amount_np[i]
+                amount_ratio = amount_np[i] / max_amt if max_amt > 0 else 0.0
+                amount_ratio = max(0.0, min(1.0, amount_ratio))
+
+                buffer.extend(struct.pack("f", amount_ratio))
+                buffer.extend(struct.pack("f", radius_np[i]))
+
+                # is_renewable (uint8)
+                is_renewable = int(replenish_np[i] > 0)
+                buffer.extend(struct.pack("B", is_renewable))
+                buffer.extend(b"\x00" * 3)  # padding
 
         # === Group Statistics (optional) ===
         # 只有 HeterogeneousFlocking3D 才有群組資料

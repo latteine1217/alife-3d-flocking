@@ -212,7 +212,18 @@ def set_leader_goals(
         system = HeterogeneousFlocking3D(...)
         set_leader_goals(system, goal_position=[25.0, 25.0, 25.0])
     """
-    agent_types = system.agent_type.to_numpy()
+    # 向後相容：不同系統可能使用不同欄位命名
+    if hasattr(system, "agent_type_field"):
+        agent_types = system.agent_type_field.to_numpy()
+    else:
+        agent_types = system.agent_type.to_numpy()
+
+    # 多數系統的 system.N 代表「活躍 agent 數量」
+    if hasattr(system, "N"):
+        try:
+            agent_types = agent_types[: int(system.N)]
+        except Exception:
+            pass
     leader_indices = np.where(agent_types == leader_type)[0]
 
     if len(leader_indices) == 0:

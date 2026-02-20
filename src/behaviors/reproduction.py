@@ -110,17 +110,25 @@ class ReproductionBehaviorMixin:
                     break
 
                 # 執行繁殖
-                self._spawn_offspring(parent_idx, offspring_idx, x_np, v_np, energy_np)
+                offspring_energy = self._spawn_offspring(
+                    parent_idx, offspring_idx, x_np, v_np, energy_np
+                )
 
                 # 扣除父代能量
                 energy_cost = energy_np[parent_idx] * self.parent_energy_cost
-                self.agent_energy[parent_idx] -= energy_cost
+                energy_np[parent_idx] -= energy_cost
+                self.agent_energy[parent_idx] = energy_np[parent_idx]
 
                 # 重置冷卻
                 self.reproduction_timer[parent_idx] = self.reproduction_cooldown
+                timer_np[parent_idx] = self.reproduction_cooldown
 
                 # 更新存活狀態
                 alive_np[offspring_idx] = 1
+                self.agent_alive[offspring_idx] = 1
+                # 避免同一步將新生子代當成「可繁殖父代」（energy_np/timer_np 是快照）
+                energy_np[offspring_idx] = offspring_energy
+                timer_np[offspring_idx] = self.reproduction_cooldown
 
                 births_this_step += 1
                 self.total_births += 1
@@ -132,7 +140,7 @@ class ReproductionBehaviorMixin:
         if births_this_step > 0:
             alive_count = int(alive_np.sum())
             print(
-                f"🐣 Reproduction: {births_this_step} offspring born (population: {alive_count})"
+                f"[ReproductionBehavior] births={births_this_step} population={alive_count}"
             )
 
     def _find_empty_slot(self, alive_np):
@@ -147,7 +155,7 @@ class ReproductionBehaviorMixin:
                 return i
         return None
 
-    def _spawn_offspring(self, parent_idx, offspring_idx, x_np, v_np, energy_np):
+    def _spawn_offspring(self, parent_idx, offspring_idx, x_np, v_np, energy_np) -> float:
         """
         生成子代（複製父代屬性）
 
@@ -162,9 +170,14 @@ class ReproductionBehaviorMixin:
         offset = np.random.randn(3) * self.spawn_distance
         offspring_pos = x_np[parent_idx] + offset
 
-        # 邊界處理（簡單 clamp，可改為 PBC wrap）
-        box_size = getattr(self.params, "box_size", 50.0)
-        offspring_pos = np.clip(offspring_pos, -box_size / 2, box_size / 2)
+        # 邊界處理：PBC wrap 或 clamp
+        box_size = float(getattr(self.params, "box_size", 50.0))
+        half_box = box_size * 0.5
+        boundary_mode = int(getattr(self, "boundary_mode", 0))  # 0=PBC
+        if boundary_mode == 0 and box_size > 1e-6:
+            offspring_pos = (offspring_pos + half_box) % box_size - half_box
+        else:
+            offspring_pos = np.clip(offspring_pos, -half_box, half_box)
 
         self.x[offspring_idx] = offspring_pos.astype(np.float32)
 
@@ -173,9 +186,9 @@ class ReproductionBehaviorMixin:
         offspring_vel = v_np[parent_idx] + mutation
         self.v[offspring_idx] = offspring_vel.astype(np.float32)
 
-        # 3. 能量：初始能量（相對父代基礎能量）
-        # 注意：offspring_energy_ratio 是相對 100.0（滿能量）
-        offspring_energy = 100.0 * self.offspring_energy_ratio
+        # 3. 能量：初始能量（相對系統能量上限，若不存在則回退到 100.0）
+        energy_ref = float(getattr(self, "energy_max", 100.0))
+        offspring_energy = energy_ref * self.offspring_energy_ratio
         self.agent_energy[offspring_idx] = offspring_energy
 
         # 4. 類型：繼承父代
@@ -183,25 +196,63 @@ class ReproductionBehaviorMixin:
         self.agent_types_np[offspring_idx] = parent_type
         self.agent_type_field[offspring_idx] = int(parent_type)
 
-        # 5. 基礎速度：繼承父代
+        # 5. 個體參數：繼承父代（保持行為一致）
+        if hasattr(self, "beta_individual"):
+            self.beta_individual[offspring_idx] = self.beta_individual[parent_idx]
+        if hasattr(self, "eta_individual"):
+            self.eta_individual[offspring_idx] = self.eta_individual[parent_idx]
+        if hasattr(self, "goal_strength"):
+            self.goal_strength[offspring_idx] = self.goal_strength[parent_idx]
+        if hasattr(self, "predator_hunt_range"):
+            self.predator_hunt_range[offspring_idx] = self.predator_hunt_range[
+                parent_idx
+            ]
+        if hasattr(self, "predator_attack_range"):
+            self.predator_attack_range[offspring_idx] = self.predator_attack_range[
+                parent_idx
+            ]
+
+        # 基礎速度：繼承父代
         parent_v0 = self.v0_base[parent_idx]
         self.v0_base[offspring_idx] = parent_v0
         self.v0_individual[offspring_idx] = parent_v0
 
-        # 6. 質量：繼承父代
-        parent_mass = self.mass[parent_idx]
-        self.mass[offspring_idx] = parent_mass
+        # 6. 質量：繼承父代（支援動態質量欄位）
+        if hasattr(self, "mass_base") and hasattr(self, "mass_individual"):
+            parent_mass_base = self.mass_base[parent_idx]
+            self.mass_base[offspring_idx] = parent_mass_base
+            self.mass_individual[offspring_idx] = parent_mass_base
+        elif hasattr(self, "mass_individual"):
+            parent_mass = self.mass_individual[parent_idx]
+            self.mass_individual[offspring_idx] = parent_mass
+        elif hasattr(self, "mass"):
+            parent_mass = self.mass[parent_idx]
+            self.mass[offspring_idx] = parent_mass
 
         # 7. 健康狀態：初始為健康
         self.agent_health_status[offspring_idx] = 0
 
         # 8. 清空目標資源與獵物
         self.agent_target_resource[offspring_idx] = -1
+        if hasattr(self, "resource_seek_steps"):
+            self.resource_seek_steps[offspring_idx] = 0
         if hasattr(self, "agent_target_prey"):
             self.agent_target_prey[offspring_idx] = -1
+        if hasattr(self, "agent_group_defense_multiplier"):
+            self.agent_group_defense_multiplier[offspring_idx] = 1.0
+        if hasattr(self, "group_id"):
+            self.group_id[offspring_idx] = -1
+        if hasattr(self, "has_goal"):
+            self.has_goal[offspring_idx] = 0
 
-        # 9. 力場清零
-        self.f[offspring_idx] = ti.Vector([0.0, 0.0, 0.0], dt=ti.f32)
+        # 9. 存活狀態與繁殖冷卻（避免同一步或下一步重複繁殖）
+        self.agent_alive[offspring_idx] = 1
+        self.reproduction_timer[offspring_idx] = self.reproduction_cooldown
+
+        # 10. 力場清零
+        self.f[offspring_idx] = ti.Vector([0.0, 0.0, 0.0])
+
+        return float(offspring_energy)
 
     @ti.kernel
     def _update_cooldown_timers(self):

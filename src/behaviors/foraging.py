@@ -52,9 +52,21 @@ class ForagingBehaviorMixin:
         """
         self.resources = resources
 
+        # 向後相容：Foraging 可以被單獨 mixin 使用（測試/最小系統）
+        # 若上層系統尚未提供必要欄位，則提供合理預設。
+        if not hasattr(self, "agent_alive"):
+            self.agent_alive = ti.field(ti.i32, N)
+            self.agent_alive.fill(1)
+        if not hasattr(self, "agent_type_field"):
+            # 0=FOLLOWER（非掠食者），確保 kernel 中的「掠食者分支」可用
+            self.agent_type_field = ti.field(ti.i32, N)
+            self.agent_type_field.fill(0)
+
         # 能量系統
         self.agent_energy = ti.field(ti.f32, N)
         self.agent_target_resource = ti.field(ti.i32, N)
+        # 記錄 agent 鎖定資源後的追逐步數（用於旅行時間補償）
+        self.resource_seek_steps = ti.field(ti.i32, N)
 
         # 健康狀態系統（新增）
         # 0=健康, 1=疲勞, 2=虛弱, 3=瀕死
@@ -63,11 +75,27 @@ class ForagingBehaviorMixin:
         # 參數
         self.energy_threshold = energy_threshold
         self.energy_consumption_rate = energy_consumption_rate
+        # 統一能量上限，避免「初始能量 > 回復上限」導致系統必然單向失血
+        self.energy_max = initial_energy
+        # 掠食者較早進入資源覓食，避免只能靠掠食補能
+        self.predator_energy_threshold = max(energy_threshold, initial_energy * 0.7)
+        # 能量-質量耦合：能量每 9 份，質量增幅約 1 份（9:1）
+        self.mass_energy_ratio = 9.0
+        # 質量對能耗加成係數（越大表示重質量更耗能）
+        self.mass_energy_cost_scale = 0.35
+        # 僅在系統具備質量欄位時啟用（向後相容）
+        self.enable_mass_energy_coupling = hasattr(self, "mass_individual") and hasattr(
+            self, "mass_base"
+        )
 
         # 初始化
         self.agent_energy.fill(initial_energy)
         self.agent_target_resource.fill(-1)
+        self.resource_seek_steps.fill(0)
         self.agent_health_status.fill(0)  # 全部健康
+
+        # 依初始能量同步一次動態質量（若支援）
+        self._update_mass_from_energy()
 
         print(f"[ForagingBehavior] Initialized with threshold={energy_threshold:.1f}")
 
@@ -80,6 +108,10 @@ class ForagingBehaviorMixin:
             • 若 energy < threshold 且無目標 → 搜尋最近資源
             • 計算到所有資源的距離
             • 選擇最近且有效的資源
+
+        優化：
+            • 只有能量不足時才搜尋
+            • 資源數量通常很少（M≈10-32），O(N×M) 可接受
         """
         N_res = self.resources.n_resources
 
@@ -91,12 +123,16 @@ class ForagingBehaviorMixin:
             energy = self.agent_energy[i]
             current_target = self.agent_target_resource[i]
 
-            # 檢查是否需要覓食
-            if energy < self.energy_threshold or current_target >= 0:
+            # 檢查是否需要覓食（掠食者使用較高門檻，提早尋找資源）
+            seek_threshold = self.energy_threshold
+            if self.agent_type_field[i] == 3:
+                seek_threshold = self.predator_energy_threshold
+
+            if energy < seek_threshold:
                 min_dist = 1e10
                 best_res = -1
 
-                # 搜尋所有資源
+                # 搜尋所有資源（資源數量少，暴力搜尋可接受）
                 for res_id in range(N_res):
                     if self.resources.resource_active[res_id] == 1:
                         if self.resources.resource_amount[res_id] > 0.0:
@@ -117,10 +153,41 @@ class ForagingBehaviorMixin:
                                 best_res = res_id
 
                 # 更新目標
+                if best_res >= 0:
+                    if current_target == best_res and current_target >= 0:
+                        self.resource_seek_steps[i] = ti.min(
+                            self.resource_seek_steps[i] + 1, 10000
+                        )
+                    else:
+                        self.resource_seek_steps[i] = 1
+                else:
+                    self.resource_seek_steps[i] = 0
                 self.agent_target_resource[i] = best_res
+            elif energy >= self.energy_max:
+                # 能量已滿，清除目標
+                self.agent_target_resource[i] = -1
+                self.resource_seek_steps[i] = 0
+
+    def _update_energy_consumption(
+        self,
+        velocity_factor: float,
+        travel_relief_factor: float = 0.45,
+        travel_relief_steps: float = 120.0,
+    ):
+        """
+        Python 包裝：保持舊呼叫相容，並轉發至 Taichi kernel
+        """
+        self._update_energy_consumption_kernel(
+            velocity_factor, travel_relief_factor, travel_relief_steps
+        )
 
     @ti.kernel
-    def _update_energy_consumption(self, velocity_factor: ti.f32):
+    def _update_energy_consumption_kernel(
+        self,
+        velocity_factor: ti.f32,
+        travel_relief_factor: ti.f32,
+        travel_relief_steps: ti.f32,
+    ):
         """
         更新所有 agent 的能量消耗（速度相關）
 
@@ -143,11 +210,56 @@ class ForagingBehaviorMixin:
             speed = self.v[i].norm()
             velocity_consumption = velocity_factor * speed
 
+            # 質量額外消耗：質量越大，維持活動所需能量越高
+            mass_consumption = 0.0
+            if ti.static(self.enable_mass_energy_coupling):
+                reference_mass = ti.max(self.p[9], 1e-6)
+                mass_ratio = self.mass_individual[i] / reference_mass
+                mass_consumption = (
+                    self.energy_consumption_rate
+                    * self.mass_energy_cost_scale
+                    * ti.max(0.0, mass_ratio - 1.0)
+                )
+
             # 總消耗
-            total_consumption = base_consumption + velocity_consumption
+            total_consumption = base_consumption + velocity_consumption + mass_consumption
+
+            # 旅行時間補償：
+            # 低能量且已鎖定資源時，隨追逐步數逐漸降低消耗，
+            # 反映「到達資源需要時間」的能量平衡成本。
+            low_energy_threshold = self.energy_threshold
+            if self.agent_type_field[i] == 3:
+                low_energy_threshold = self.predator_energy_threshold
+
+            if self.agent_target_resource[i] >= 0 and self.agent_energy[i] < low_energy_threshold:
+                progress = ti.min(
+                    1.0, ti.cast(self.resource_seek_steps[i], ti.f32) / ti.max(travel_relief_steps, 1.0)
+                )
+                relief_multiplier = 1.0 - travel_relief_factor * progress
+                total_consumption *= ti.max(0.35, relief_multiplier)
 
             # 更新能量（不低於 0）
             self.agent_energy[i] = ti.max(0.0, self.agent_energy[i] - total_consumption)
+
+    @ti.kernel
+    def _update_mass_from_energy(self):
+        """
+        依能量更新動態質量（9:1 比例）
+
+        設計：
+            • energy_ratio = energy / energy_max
+            • mass_multiplier = 1 + energy_ratio / 9
+            • 能量高時質量小幅增加（滿能量約 +11.1%）
+        """
+        for i in self.agent_energy:
+            if self.agent_alive[i] == 0:
+                continue
+
+            if ti.static(self.enable_mass_energy_coupling):
+                energy_ratio = self.agent_energy[i] / ti.max(self.energy_max, 1e-6)
+                energy_ratio = ti.max(0.0, ti.min(1.0, energy_ratio))
+                mass_multiplier = 1.0 + energy_ratio / self.mass_energy_ratio
+                self.mass_individual[i] = self.mass_base[i] * mass_multiplier
 
     @ti.kernel
     def _update_health_status(self):
@@ -215,6 +327,8 @@ class ForagingBehaviorMixin:
         consumption_rate: float = 3.0,
         velocity_factor: float = 0.5,
         conversion_efficiency: float = 0.5,
+        travel_relief_factor: float = 0.45,
+        travel_relief_steps: float = 120.0,
         competition_mode: str = "fifo",
     ):
         """
@@ -224,10 +338,14 @@ class ForagingBehaviorMixin:
             consumption_rate: 每個 agent 每步消耗資源的速率
             velocity_factor: 速度消耗係數（用於能量消耗）
             conversion_efficiency: 資源 → 能量轉換效率（0.5 = 消耗 10 資源獲得 5 能量）
+            travel_relief_factor: 旅行補償強度（0-1，越大表示追資源時消耗下降越多）
+            travel_relief_steps: 補償達到上限所需步數
             competition_mode: 競爭模式 ("fifo"=先到先得, "equal"=平均分配)
         """
         # 1. 先更新能量消耗（速度相關）
-        self._update_energy_consumption(velocity_factor)
+        self._update_energy_consumption(
+            velocity_factor, travel_relief_factor, travel_relief_steps
+        )
 
         # 2. 更新健康狀態（會影響移動速度）
         self._update_health_status()
@@ -248,6 +366,13 @@ class ForagingBehaviorMixin:
 
             target_res = target_res_np[i]
             if target_res >= 0 and target_res < self.resources.n_resources:
+                # 🔧 FIX: 檢查資源是否 active 和有效（避免追逐已失效的資源）
+                if self.resources.resource_active[target_res] == 0:
+                    # 資源已失效，清除 agent 的目標
+                    self.agent_target_resource[i] = -1
+                    self.resource_seek_steps[i] = 0
+                    continue
+
                 agent_pos = x_np[i]
                 res_pos = self.resources.resource_pos[target_res].to_numpy()
                 res_radius = self.resources.resource_radius[target_res]
@@ -268,6 +393,9 @@ class ForagingBehaviorMixin:
                 resource_consumers, consumption_rate, conversion_efficiency
             )
 
+        # 5. 能量變動後更新質量（供下一步物理與能耗使用）
+        self._update_mass_from_energy()
+
     def _allocate_equal(
         self, resource_consumers, consumption_rate: float, conversion_efficiency: float
     ):
@@ -286,18 +414,29 @@ class ForagingBehaviorMixin:
             # 實際消耗
             consumed = self.resources.consume_resource(res_id, total_demand)
 
+            # 🔧 FIX: 檢查資源是否已失效（耗盡且無補充）
+            # 如果失效，清除所有 agents 的目標
+            resource_depleted = False
+            if self.resources.resource_active[res_id] == 0:
+                resource_depleted = True
+
             # 平分
-            per_agent_gain = (consumed / n_consumers) * conversion_efficiency
+            per_agent_gain = (consumed / n_consumers) * conversion_efficiency if consumed > 0 else 0.0
 
             for agent_idx in agent_indices:
                 current_energy = self.agent_energy[agent_idx]
+                gain_multiplier = 1.0
+                if self.agent_type_field[agent_idx] == 3:
+                    gain_multiplier = 1.25
+
                 self.agent_energy[agent_idx] = min(
-                    100.0, current_energy + per_agent_gain
+                    self.energy_max, current_energy + per_agent_gain * gain_multiplier
                 )
 
-                # 若能量已滿，清除目標
-                if self.agent_energy[agent_idx] >= 100.0:
+                # 若能量已滿或資源已耗盡，清除目標
+                if self.agent_energy[agent_idx] >= self.energy_max or resource_depleted:
                     self.agent_target_resource[agent_idx] = -1
+                    self.resource_seek_steps[agent_idx] = 0
 
     def _allocate_fifo(
         self, resource_consumers, consumption_rate: float, conversion_efficiency: float
@@ -336,14 +475,21 @@ class ForagingBehaviorMixin:
 
                 # 更新 agent 能量
                 current_energy = self.agent_energy[agent_idx]
-                self.agent_energy[agent_idx] = min(100.0, current_energy + energy_gain)
+                gain_multiplier = 1.0
+                if self.agent_type_field[agent_idx] == 3:
+                    gain_multiplier = 1.25
+
+                self.agent_energy[agent_idx] = min(
+                    self.energy_max, current_energy + energy_gain * gain_multiplier
+                )
 
                 # 扣除已消耗量
                 available -= consumed
 
                 # 若能量已滿，清除目標
-                if self.agent_energy[agent_idx] >= 100.0:
+                if self.agent_energy[agent_idx] >= self.energy_max:
                     self.agent_target_resource[agent_idx] = -1
+                    self.resource_seek_steps[agent_idx] = 0
 
     @ti.kernel
     def _check_energy_death(self):
@@ -365,6 +511,7 @@ class ForagingBehaviorMixin:
 
                 # 清除目標（避免死亡 agent 繼續鎖定資源）
                 self.agent_target_resource[i] = -1
+                self.resource_seek_steps[i] = 0
 
                 # 移動到遠處（消失）
                 self.x[i] = ti.Vector([dead_zone, dead_zone, dead_zone])

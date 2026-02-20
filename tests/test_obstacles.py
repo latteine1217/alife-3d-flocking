@@ -296,6 +296,7 @@ def test_corridor_navigation():
 
     # 初始化在走廊入口
     system.initialize(box_size=2.0, seed=42)
+    system.enable_ecology = False  # 避免能量/死亡機制干擾導航測試
     x_init = np.zeros((N, 3), dtype=np.float32)
     x_init[:, 0] = -10  # x = -10
     x_init[:, 1] = np.random.randn(N) * 0.5  # y 方向略微分散
@@ -318,7 +319,7 @@ def test_corridor_navigation():
         system.step(dt=0.01)
 
     # 驗證：agents 應該通過走廊
-    x_final = system.x.to_numpy()
+    x_final = system.x.to_numpy()[:N]
     avg_x = np.mean(x_final[:, 0])
     avg_y = np.mean(x_final[:, 1])
 

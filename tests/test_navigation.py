@@ -4,6 +4,12 @@ Unit Tests for NavigationMixin (Phase 6.2)
 測試 Goal-seeking navigation 功能的正確性
 """
 
+import sys
+from pathlib import Path
+
+# 將 src 目錄加入路徑（src-layout 專案在未安裝時需要）
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 import pytest
 import taichi as ti
 import numpy as np

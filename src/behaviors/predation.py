@@ -36,29 +36,47 @@ class PredationBehaviorMixin:
         Args:
             N: Agent 數量
         """
+        # 保存 predation 使用的容量（支援 pre-allocated pool + 繁殖）
+        # 注意：不要使用 self.N（它在某些系統代表「初始活躍數量」而非容量）
+        self.predation_N = int(N)
+
         # 掠食者目標與狀態
         self.agent_target_prey = ti.field(ti.i32, N)  # 目標獵物 ID（-1 = 無目標）
-        self.agent_alive = ti.field(ti.i32, N)  # agent 是否存活（0/1）
+        # agent_alive 可能由主系統先建立（例如 pre-allocated pool）
+        # 向後相容：若不存在才建立；避免覆寫使用者設定的存活分佈。
+        created_agent_alive = False
+        if not hasattr(self, "agent_alive"):
+            self.agent_alive = ti.field(ti.i32, N)  # agent 是否存活（0/1）
+            created_agent_alive = True
 
         # 掠食者參數
         self.predator_hunt_range = ti.field(ti.f32, N)  # 追捕範圍
         self.predator_attack_range = ti.field(ti.f32, N)  # 攻擊範圍
 
+        # 群體防禦乘數（預先計算）
+        self.agent_group_defense_multiplier = ti.field(ti.f32, N)
+
         # 初始化
         self.agent_target_prey.fill(-1)
-        self.agent_alive.fill(1)  # 所有 agent 初始存活
+        if created_agent_alive:
+            # 兼容舊行為：Predation 單獨使用時，預設全存活
+            self.agent_alive.fill(1)
+        self.agent_group_defense_multiplier.fill(1.0)
 
         print(f"[PredationBehavior] Initialized for N={N} agents")
 
     @ti.kernel
     def find_nearest_prey(self):
         """
-        掠食者搜尋最近的獵物
+        掠食者搜尋最近的獵物（使用 Spatial Grid 加速）
 
         邏輯：
             • 只有 PREDATOR 類型（type=3）會執行
-            • 搜尋範圍內最近且存活的非掠食者
+            • 使用 Grid 搜尋 27 個鄰近 cells，取代 O(N²) 全局搜尋
+            • 限制檢查數量避免編譯超時（max_check=12）
             • 更新 agent_target_prey[i]
+
+        複雜度：O(N_predators × k)，k ≈ 12
         """
         for i in self.x:
             # 只有存活的掠食者才追捕
@@ -67,206 +85,279 @@ class PredationBehaviorMixin:
                 min_dist = hunt_range
                 best_prey = -1
 
-                # 搜尋所有存活的非掠食者
-                for j in range(self.N):
-                    if i == j:
-                        continue
+                # 獲取掠食者所在的 cell
+                cell_id = self.agent_cell_id[i]
+                if cell_id < 0:
+                    continue
 
-                    # 只追捕存活且非掠食者的 agent
-                    if self.agent_alive[j] == 1 and self.agent_type_field[j] != 3:
-                        # 計算距離（考慮 PBC）
-                        dx = ti.Vector([0.0, 0.0, 0.0])
-                        if self.params.boundary_mode == 0:  # PBC
-                            dx = self.pbc_dist(self.x[i], self.x[j])
-                        else:
-                            dx = self.x[j] - self.x[i]
+                # 解析 cell_id 為 3D index (ix, iy, iz)
+                res = self.grid_resolution
+                iz = cell_id // (res * res)
+                remainder = cell_id % (res * res)
+                iy = remainder // res
+                ix = remainder % res
 
-                        dist = dx.norm()
+                # 使用 loop unrolling 搜尋 27 個鄰近 cells
+                for cell_offset in ti.static(range(27)):
+                    dz = (cell_offset // 9) - 1
+                    dy = ((cell_offset % 9) // 3) - 1
+                    dx = (cell_offset % 3) - 1
 
-                        if dist < min_dist:
-                            min_dist = dist
-                            best_prey = j
+                    nx = ix + dx
+                    ny = iy + dy
+                    nz = iz + dz
+
+                    # 邊界檢查
+                    if (
+                        nx >= 0
+                        and nx < res
+                        and ny >= 0
+                        and ny < res
+                        and nz >= 0
+                        and nz < res
+                    ):
+                        neighbor_cell = nx + ny * res + nz * res * res
+                        cell_count = self.cell_count[neighbor_cell]
+
+                        # 限制檢查數量避免編譯超時
+                        max_check = ti.min(cell_count, 12)
+
+                        for local_idx in range(max_check):
+                            j = self.cell_agents[neighbor_cell, local_idx]
+                            if i == j:
+                                continue
+
+                            # 只追捕存活且非掠食者的 agent
+                            if (
+                                self.agent_alive[j] == 1
+                                and self.agent_type_field[j] != 3
+                            ):
+                                # 計算距離（考慮 PBC）
+                                dx_vec = ti.Vector([0.0, 0.0, 0.0])
+                                if self.params.boundary_mode == 0:  # PBC
+                                    dx_vec = self.pbc_dist(self.x[i], self.x[j])
+                                else:
+                                    dx_vec = self.x[j] - self.x[i]
+
+                                dist = dx_vec.norm()
+
+                                if dist < min_dist:
+                                    min_dist = dist
+                                    best_prey = j
 
                 # 更新目標獵物
                 self.agent_target_prey[i] = best_prey
 
-    def attack_prey_step(self):
+    @ti.kernel
+    def attack_prey_kernel(
+        self,
+        base_rate: ti.f32,
+        speed_weight: ti.f32,
+        weakness_weight: ti.f32,
+        energy_conversion: ti.f32,
+        energy_penalty: ti.f32,
+    ) -> ti.i32:
         """
-        處理掠食者攻擊（每步呼叫一次）
+        處理掠食者攻擊（Taichi kernel 版本）
 
         邏輯：
             • 掠食者在攻擊範圍內嘗試捕食獵物
-            • 攻擊成功率動態計算（速度優勢、獵物虛弱度、掠食者體力）
+            • 攻擊成功率動態計算（速度優勢、獵物虛弱度、掠食者體力、群體防禦）
             • 成功：獵物死亡，掠食者獲得能量
             • 失敗：掠食者損失體力
-        """
-        x_np = self.x.to_numpy()
-        v_np = self.v.to_numpy()
-        target_prey_np = self.agent_target_prey.to_numpy()
-        alive_np = self.agent_alive.to_numpy()
-        agent_type_np = self.agent_type_field.to_numpy()
-
-        for i in range(len(x_np)):
-            # 只有存活的掠食者才能攻擊
-            if agent_type_np[i] == 3 and alive_np[i] == 1:  # PREDATOR
-                target_prey = target_prey_np[i]
-
-                if target_prey >= 0 and alive_np[target_prey] == 1:
-                    # 計算距離
-                    predator_pos = x_np[i]
-                    prey_pos = x_np[target_prey]
-                    distance = np.linalg.norm(predator_pos - prey_pos)
-
-                    # 獲取攻擊範圍
-                    attack_range = self.predator_attack_range[i]
-
-                    if distance < attack_range:
-                        # === 計算攻擊成功率（新增動態判定）===
-                        success_rate = self._compute_attack_success_rate(
-                            i, target_prey, v_np
-                        )
-
-                        # 擲骰子判定
-                        if np.random.rand() < success_rate:
-                            # 捕食成功！
-                            prey_energy = self.agent_energy[target_prey]
-                            energy_gain = prey_energy * 0.7
-                            current_energy = self.agent_energy[i]
-                            self.agent_energy[i] = min(
-                                100.0, current_energy + energy_gain
-                            )
-
-                            print(
-                                f"🦁 Predator {i} captured prey {target_prey}! "
-                                f"(Success rate: {success_rate:.1%}, "
-                                f"Gained {energy_gain:.1f} energy from prey's {prey_energy:.1f})"
-                            )
-
-                            # 獵物死亡：標記 + 消失
-                            self._remove_dead_agent(target_prey)
-                            self.agent_target_prey[i] = -1  # 清除目標
-                        else:
-                            # 攻擊失敗！消耗額外能量
-                            energy_penalty = 10.0
-                            self.agent_energy[i] = max(
-                                0.0, self.agent_energy[i] - energy_penalty
-                            )
-
-                            print(
-                                f"💨 Predator {i} failed to catch prey {target_prey} "
-                                f"(Success rate: {success_rate:.1%}, Lost {energy_penalty:.1f} energy)"
-                            )
-
-    def _compute_attack_success_rate(
-        self, predator_id: int, prey_id: int, v_np: np.ndarray
-    ) -> float:
-        """
-        計算攻擊成功率（動態判定）
-
-        考慮因素：
-            • 速度優勢：掠食者越快於獵物，成功率越高
-            • 獵物虛弱度：獵物能量越低，越容易被捕
-            • 掠食者體力：掠食者能量不足會降低成功率
-            • 群體防禦：獵物附近同伴越多，成功率越低（稀釋效應）
 
         Returns:
-            攻擊成功率 (0.0-1.0)
+            成功捕食的數量
         """
-        # === 1. 速度優勢 ===
-        v_predator = np.linalg.norm(v_np[predator_id])
-        v_prey = np.linalg.norm(v_np[prey_id])
+        success_count = 0
 
-        # 速度優勢：(v_predator - v_prey) / v_predator
-        # 範圍：[-inf, 1.0]，限制在 [0, 1]
-        if v_predator > 1e-6:
-            speed_advantage = max(0.0, (v_predator - v_prey) / v_predator)
-        else:
-            speed_advantage = 0.0
+        for i in self.x:
+            # 只有存活的掠食者才能攻擊
+            if self.agent_type_field[i] != 3 or self.agent_alive[i] != 1:
+                continue
 
-        # === 2. 獵物虛弱度 ===
-        prey_energy = self.agent_energy[prey_id]
-        prey_weakness = 1.0 - (prey_energy / 100.0)  # 能量越低越弱
+            target_prey = self.agent_target_prey[i]
 
-        # === 3. 掠食者體力 ===
-        predator_energy = self.agent_energy[predator_id]
-        predator_stamina = predator_energy / 100.0  # 能量越低越弱
+            # 檢查目標是否有效
+            if target_prey < 0 or target_prey >= self.predation_N:
+                continue
+            if self.agent_alive[target_prey] != 1:
+                continue
 
-        # === 4. 群體防禦（稀釋效應）===
-        group_defense = self._compute_group_defense_bonus(prey_id)
+            # 計算距離
+            dx_vec = ti.Vector([0.0, 0.0, 0.0])
+            if self.params.boundary_mode == 0:  # PBC
+                dx_vec = self.pbc_dist(self.x[i], self.x[target_prey])
+            else:
+                dx_vec = self.x[target_prey] - self.x[i]
 
-        # === 綜合成功率 ===
-        base_rate = 0.3  # 基礎 30%
-        success_rate = (
-            base_rate
-            + 0.25 * speed_advantage  # 速度優勢貢獻 25%
-            + 0.25 * prey_weakness  # 獵物虛弱貢獻 25%
+            distance = dx_vec.norm()
+            attack_range = self.predator_attack_range[i]
+
+            if distance < attack_range:
+                # === 計算攻擊成功率 ===
+                # 1. 速度優勢
+                v_predator = self.v[i].norm()
+                v_prey = self.v[target_prey].norm()
+                speed_advantage = 0.0
+                if v_predator > 1e-6:
+                    speed_advantage = ti.max(0.0, (v_predator - v_prey) / v_predator)
+
+                # 2. 獵物虛弱度
+                prey_energy = self.agent_energy[target_prey]
+                energy_max = ti.max(self.energy_max, 1e-6)
+                prey_weakness = 1.0 - (prey_energy / energy_max)
+
+                # 3. 掠食者體力
+                predator_energy = self.agent_energy[i]
+                predator_stamina = predator_energy / energy_max
+
+                # 4. 群體防禦（預先計算）
+                group_defense = self.agent_group_defense_multiplier[target_prey]
+
+                # 綜合成功率
+                success_rate = (
+                    base_rate
+                    + speed_weight * speed_advantage
+                    + weakness_weight * prey_weakness
+                )
+                success_rate *= predator_stamina
+                success_rate *= group_defense
+                success_rate = ti.max(0.05, ti.min(0.95, success_rate))
+
+                # 擲骰子判定
+                if ti.random(ti.f32) < success_rate:
+                    # 捕食成功！
+                    energy_gain = prey_energy * energy_conversion
+                    current_energy = self.agent_energy[i]
+                    self.agent_energy[i] = ti.min(
+                        self.energy_max, current_energy + energy_gain
+                    )
+
+                    # 獵物死亡（移到遠處）
+                    dead_zone = 1e6
+                    self.agent_alive[target_prey] = 0
+                    self.x[target_prey] = ti.Vector([dead_zone, dead_zone, dead_zone])
+                    self.v[target_prey] = ti.Vector([0.0, 0.0, 0.0])
+                    self.f[target_prey] = ti.Vector([0.0, 0.0, 0.0])
+
+                    # 清除目標
+                    self.agent_target_prey[i] = -1
+                    ti.atomic_add(success_count, 1)
+                else:
+                    # 攻擊失敗！消耗額外能量
+                    self.agent_energy[i] = ti.max(
+                        0.0, self.agent_energy[i] - energy_penalty
+                    )
+
+        return success_count
+
+    def attack_prey_step(self):
+        """
+        處理掠食者攻擊（Python 介面）
+
+        調用 Taichi kernel 進行 GPU 加速計算
+        """
+        # 預先計算群體防禦乘數
+        self.compute_group_defense(group_range=5.0)
+
+        # 調用 kernel 處理攻擊
+        success_count = self.attack_prey_kernel(
+            base_rate=0.3,
+            speed_weight=0.25,
+            weakness_weight=0.25,
+            energy_conversion=0.7,
+            energy_penalty=10.0,
         )
-        success_rate *= predator_stamina  # 掠食者體力乘數
-        success_rate *= group_defense  # 群體防禦乘數
 
-        # 限制在 [0.05, 0.95] 範圍內（總有小機率成功/失敗）
-        return np.clip(success_rate, 0.05, 0.95)
+        if success_count > 0:
+            print(f"🦁 {success_count} successful predations this step")
 
-    def _compute_group_defense_bonus(self, prey_id: int) -> float:
+    @ti.kernel
+    def compute_group_defense(self, group_range: ti.f32):
         """
-        計算群體防禦加成（稀釋效應）
+        預先計算每個 agent 的群體防禦加成（使用 Grid 加速）
 
         機制：
-            • 周圍同類越多 → 被攻擊機率越低
-            • 每多 1 個同伴，成功率降低 5%
+            • 使用 Spatial Grid 搜尋鄰近同類
+            • 周圍同類越多 → 防禦乘數越低（稀釋效應）
+            • 每多 1 個同伴，攻擊成功率降低 5%
             • 最多降至 30%
 
-        Returns:
-            防禦乘數 (0.3-1.0)
+        將結果存儲在 agent_group_defense_multiplier field 中
         """
-        x_np = self.x.to_numpy()
-        alive_np = self.agent_alive.to_numpy()
-        agent_type_np = self.agent_type_field.to_numpy()
-
-        prey_pos = x_np[prey_id]
-        prey_type = agent_type_np[prey_id]
-        group_range = 5.0  # 5 單位內算同群
-
-        n_nearby = 0
-        for j in range(len(x_np)):
-            if j == prey_id:
-                continue
-            if alive_np[j] == 0:
-                continue
-            if agent_type_np[j] != prey_type:  # 必須同類
+        for i in self.x:
+            if self.agent_alive[i] == 0:
+                self.agent_group_defense_multiplier[i] = 1.0
                 continue
 
-            dist = np.linalg.norm(x_np[j] - prey_pos)
-            if dist < group_range:
-                n_nearby += 1
+            prey_type = self.agent_type_field[i]
+            n_nearby = 0
 
-        # 稀釋效應：每多 1 個同伴，攻擊成功率降低 5%
-        dilution_factor = 1.0 - (n_nearby * 0.05)
+            # 獲取 agent i 所在的 cell
+            cell_id = self.agent_cell_id[i]
+            if cell_id < 0:
+                self.agent_group_defense_multiplier[i] = 1.0
+                continue
 
-        # 最多降到 30%
-        return max(0.3, dilution_factor)
+            # 解析 cell_id 為 3D index (ix, iy, iz)
+            res = self.grid_resolution
+            iz = cell_id // (res * res)
+            remainder = cell_id % (res * res)
+            iy = remainder // res
+            ix = remainder % res
 
-    def _remove_dead_agent(self, agent_id: int):
-        """
-        移除死亡的 agent（讓它消失）
+            # 搜尋 27 個鄰近 cells（loop unrolling）
+            for cell_offset in ti.static(range(27)):
+                dz = (cell_offset // 9) - 1
+                dy = ((cell_offset % 9) // 3) - 1
+                dx = (cell_offset % 3) - 1
 
-        Args:
-            agent_id: 死亡 agent 的 ID
-        """
-        dead_zone = 1e6  # 遠離模擬區域的位置
+                nx = ix + dx
+                ny = iy + dy
+                nz = iz + dz
 
-        # 標記為死亡
-        self.agent_alive[agent_id] = 0
+                # 邊界檢查
+                if (
+                    nx >= 0
+                    and nx < res
+                    and ny >= 0
+                    and ny < res
+                    and nz >= 0
+                    and nz < res
+                ):
+                    neighbor_cell = nx + ny * res + nz * res * res
+                    cell_count = self.cell_count[neighbor_cell]
 
-        # 移動到遠處（消失）
-        x_np = self.x.to_numpy()
-        x_np[agent_id] = [dead_zone, dead_zone, dead_zone]
-        self.x.from_numpy(x_np)
+                    # 限制檢查數量
+                    max_check = ti.min(cell_count, 12)
 
-        # 停止運動
-        v_np = self.v.to_numpy()
-        v_np[agent_id] = [0.0, 0.0, 0.0]
-        self.v.from_numpy(v_np)
+                    for local_idx in range(max_check):
+                        j = self.cell_agents[neighbor_cell, local_idx]
+                        if i == j:
+                            continue
+                        if self.agent_alive[j] == 0:
+                            continue
+                        if self.agent_type_field[j] != prey_type:
+                            continue
+
+                        # 計算距離
+                        dx_vec = ti.Vector([0.0, 0.0, 0.0])
+                        if self.params.boundary_mode == 0:  # PBC
+                            dx_vec = self.pbc_dist(self.x[i], self.x[j])
+                        else:
+                            dx_vec = self.x[j] - self.x[i]
+
+                        dist = dx_vec.norm()
+
+                        if dist < group_range:
+                            n_nearby += 1
+
+            # 稀釋效應：每多 1 個同伴，攻擊成功率降低 5%
+            dilution_factor = 1.0 - (ti.cast(n_nearby, ti.f32) * 0.05)
+
+            # 最多降到 30%
+            self.agent_group_defense_multiplier[i] = ti.max(0.3, dilution_factor)
 
     # ========================================================================
     # Query API

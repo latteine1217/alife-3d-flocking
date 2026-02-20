@@ -450,31 +450,42 @@ class Flocking3D:
         Returns:
             {mean_speed, std_speed, Rg, polarization}
         """
-        # 第一次掃描
-        self._accumulate_diag()
+        # 使用 CPU 端存活遮罩計算，避免死亡粒子污染統計量
+        x_np = self.x.to_numpy()[: self.N]
+        v_np = self.v.to_numpy()[: self.N]
 
-        # 讀取累加結果
-        inv_N = 1.0 / self.N
-        v_sum = np.array([self.diag[0], self.diag[1], self.diag[2]])
-        sum_speed = self.diag[3]
-        x_cm = np.array([self.diag[4], self.diag[5], self.diag[6]]) * inv_N
+        if hasattr(self, "agent_alive"):
+            alive_mask = self.agent_alive.to_numpy()[: self.N] == 1
+        else:
+            alive_mask = np.ones(self.N, dtype=bool)
 
-        # 計算 Polarization
-        v_total_norm = np.linalg.norm(v_sum)
+        x_alive = x_np[alive_mask]
+        v_alive = v_np[alive_mask]
+        N_alive = int(len(x_alive))
+
+        if N_alive == 0:
+            return {
+                "mean_speed": 0.0,
+                "std_speed": 0.0,
+                "Rg": 0.0,
+                "polarization": 0.0,
+            }
+
+        speed_np = np.linalg.norm(v_alive, axis=1)
+        sum_speed = float(speed_np.sum())
+        mean_speed = float(sum_speed / N_alive)
+
+        v_sum = v_alive.sum(axis=0)
+        v_total_norm = float(np.linalg.norm(v_sum))
         polarization = v_total_norm / (sum_speed + 1e-12)
 
-        # 第二次掃描（Rg）
-        self._accumulate_rg(x_cm[0], x_cm[1], x_cm[2])
-        rg = np.sqrt(self.diag_r2[None] * inv_N)
-
-        # 標準差（需完整陣列）
-        v_np = self.v.to_numpy()
-        speed_np = np.linalg.norm(v_np, axis=1)
+        x_cm = x_alive.mean(axis=0)
+        rg = float(np.sqrt(np.mean(np.sum((x_alive - x_cm) ** 2, axis=1))))
 
         return {
-            "mean_speed": float(sum_speed * inv_N),
+            "mean_speed": mean_speed,
             "std_speed": float(np.std(speed_np)),
-            "Rg": float(rg),
+            "Rg": rg,
             "polarization": float(polarization),
         }
 
